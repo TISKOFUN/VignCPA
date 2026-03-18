@@ -226,6 +226,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px
     <button class="nbtn nelec" data-page="elec" onclick="sp('elec',this)"><span class="nic">⚡</span>Vignettes Élec.<span class="nbadge" id="nb-elec">0</span></button>
     <button class="nbtn ntele" data-page="tele" onclick="sp('tele',this)"><span class="nic">📡</span>Télécommunications<span class="nbadge" id="nb-tele">0</span></button>
     <button class="nbtn npost" data-page="post" onclick="sp('post',this)"><span class="nic">✉️</span>Affranchissement<span class="nbadge" id="nb-post">0</span></button>
+    <button class="nbtn" data-page="vtt" onclick="sp('vtt',this)"><span class="nic">🚗</span>Vignettes VTT<span class="nbadge" id="nb-vtt">0</span></button>
+    <button class="nbtn" data-page="vta" onclick="sp('vta',this)"><span class="nic">🚙</span>Vignettes VTA<span class="nbadge" id="nb-vta">0</span></button>
     <div class="nlbl">Référentiels</div>
     <button class="nbtn" data-page="vehicules" onclick="sp('vehicules',this)"><span class="nic">🚗</span>Véhicules<span class="nbadge" id="nb-v">0</span></button>
     <button class="nbtn" data-page="services" onclick="sp('services',this)"><span class="nic">🏢</span>Services<span class="nbadge" id="nb-sv">0</span></button>
@@ -321,7 +323,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px
 
 <!-- ELEC -->
 <div class="page" id="page-elec">
-  <div class="fh elec"><div><div class="fh-title">⚡ Vignettes Électricité — ONEE</div><div class="fh-sub">Paiement des frais de consommation des compteurs d'électricité</div></div>
+  <div class="fh elec"><div><div class="fh-title">⚡ Vignettes Électricité — SNTL/ONEE</div><div class="fh-sub">Paiement des frais de consommation des compteurs d'électricité</div></div>
     <button class="btn" style="background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.3);color:#fff" onclick="om('m-frais-elec')">+ Enregistrer paiement</button></div>
   <div class="fstats">
     <div class="fstat"><div class="fstat-val" style="color:var(--el)" id="elec-stk">0</div><div class="fstat-lbl">Vignettes disponibles</div></div>
@@ -364,6 +366,38 @@ body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px
     <div class="fbar"><input type="text" placeholder="Rechercher…" oninput="ft('t-post',this.value)"></div>
     <table class="dt"><thead><tr><th>Date</th><th>N° Pli / Référence</th><th>Destinataire</th><th>Type courrier</th><th>Vignettes</th><th>Montant (MAD)</th><th>Service émetteur</th><th>Par</th><th>Actions</th></tr></thead>
     <tbody id="t-post"></tbody></table>
+  </div>
+</div>
+
+<!-- VTT -->
+<div class="page" id="page-vtt">
+  <div class="fh" style="background:linear-gradient(135deg,var(--bl),#1e40af)"><div><div class="fh-title">🚗 Vignettes VTT</div><div class="fh-sub">Gestion et suivi des vignettes de type VTT</div></div>
+    <button class="btn" style="background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.3);color:#fff" onclick="om('m-frais-vtt')">+ Enregistrer utilisation</button></div>
+  <div class="fstats">
+    <div class="fstat"><div class="fstat-val" style="color:var(--bl)" id="vtt-stk">0</div><div class="fstat-lbl">Vignettes disponibles</div></div>
+    <div class="fstat"><div class="fstat-val" style="color:var(--gn)" id="vtt-nb">0</div><div class="fstat-lbl">Utilisations enregistrées</div></div>
+    <div class="fstat"><div class="fstat-val" style="color:var(--am);font-size:14px" id="vtt-mt">—</div><div class="fstat-lbl">Montant total</div></div>
+  </div>
+  <div class="fc">
+    <div class="fbar"><input type="text" placeholder="Rechercher…" oninput="ft('t-vtt',this.value)"></div>
+    <table class="dt"><thead><tr><th>Date</th><th>Référence</th><th>Désignation</th><th>Vignettes</th><th>Montant (MAD)</th><th>Véhicule</th><th>Par</th><th>Actions</th></tr></thead>
+    <tbody id="t-vtt"></tbody></table>
+  </div>
+</div>
+
+<!-- VTA -->
+<div class="page" id="page-vta">
+  <div class="fh" style="background:linear-gradient(135deg,var(--rd),#b91c1c)"><div><div class="fh-title">🚙 Vignettes VTA</div><div class="fh-sub">Gestion et suivi des vignettes de type VTA</div></div>
+    <button class="btn" style="background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.3);color:#fff" onclick="om('m-frais-vta')">+ Enregistrer utilisation</button></div>
+  <div class="fstats">
+    <div class="fstat"><div class="fstat-val" style="color:var(--rd)" id="vta-stk">0</div><div class="fstat-lbl">Vignettes disponibles</div></div>
+    <div class="fstat"><div class="fstat-val" style="color:var(--gn)" id="vta-nb">0</div><div class="fstat-lbl">Utilisations enregistrées</div></div>
+    <div class="fstat"><div class="fstat-val" style="color:var(--am);font-size:14px" id="vta-mt">—</div><div class="fstat-lbl">Montant total</div></div>
+  </div>
+  <div class="fc">
+    <div class="fbar"><input type="text" placeholder="Rechercher…" oninput="ft('t-vta',this.value)"></div>
+    <table class="dt"><thead><tr><th>Date</th><th>Référence</th><th>Désignation</th><th>Vignettes</th><th>Montant (MAD)</th><th>Véhicule</th><th>Par</th><th>Actions</th></tr></thead>
+    <tbody id="t-vta"></tbody></table>
   </div>
 </div>
 
@@ -543,6 +577,34 @@ body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px
     <div id="po-stk-info" style="font-size:12px;color:var(--mu);margin-top:2px"></div>
   </div>
   <div class="mf"><button class="btn" onclick="cm('m-frais-post')">Annuler</button><button class="btn btn-po" onclick="saveFrais('post')">Enregistrer l'envoi</button></div>
+</div></div>
+
+<!-- Paiement VTT -->
+<div class="ov" id="m-frais-vtt"><div class="modal wide">
+  <div class="mh"><div class="mt">🚗 Enregistrer utilisation — Vignette VTT</div><button class="xb" onclick="cm('m-frais-vtt')">×</button></div>
+  <div class="mb">
+    <input type="hidden" id="vt-eid">
+    <div class="fr"><div class="fg"><label class="fl">Date *</label><input class="fi" type="date" id="vt-date"></div><div class="fg"><label class="fl">Référence *</label><input class="fi" type="text" id="vt-num" placeholder="VTT-2024-001"></div></div>
+    <div class="fg"><label class="fl">Désignation / Motif</label><input class="fi" type="text" id="vt-des" placeholder="Mission, entretien…"></div>
+    <div class="fr"><div class="fg"><label class="fl">Vignettes utilisées *</label><input class="fi" type="number" id="vt-qte" min="1" placeholder="1" oninput="showStock('vtt','vt-stk-info',this.value)"></div><div class="fg"><label class="fl">Montant (MAD) *</label><input class="fi" type="number" id="vt-mont" step="0.01" placeholder="0.00"></div></div>
+    <div class="fg"><label class="fl">Véhicule concerné</label><select class="fs" id="vt-veh"></select></div>
+    <div id="vt-stk-info" style="font-size:12px;color:var(--mu);margin-top:2px"></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="cm('m-frais-vtt')">Annuler</button><button class="btn btn-p" onclick="saveFrais('vtt')">Enregistrer</button></div>
+</div></div>
+
+<!-- Paiement VTA -->
+<div class="ov" id="m-frais-vta"><div class="modal wide">
+  <div class="mh"><div class="mt">🚙 Enregistrer utilisation — Vignette VTA</div><button class="xb" onclick="cm('m-frais-vta')">×</button></div>
+  <div class="mb">
+    <input type="hidden" id="va-eid">
+    <div class="fr"><div class="fg"><label class="fl">Date *</label><input class="fi" type="date" id="va-date"></div><div class="fg"><label class="fl">Référence *</label><input class="fi" type="text" id="va-num" placeholder="VTA-2024-001"></div></div>
+    <div class="fg"><label class="fl">Désignation / Motif</label><input class="fi" type="text" id="va-des" placeholder="Mission, entretien…"></div>
+    <div class="fr"><div class="fg"><label class="fl">Vignettes utilisées *</label><input class="fi" type="number" id="va-qte" min="1" placeholder="1" oninput="showStock('vta','va-stk-info',this.value)"></div><div class="fg"><label class="fl">Montant (MAD) *</label><input class="fi" type="number" id="va-mont" step="0.01" placeholder="0.00"></div></div>
+    <div class="fg"><label class="fl">Véhicule concerné</label><select class="fs" id="va-veh"></select></div>
+    <div id="va-stk-info" style="font-size:12px;color:var(--mu);margin-top:2px"></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="cm('m-frais-vta')">Annuler</button><button class="btn btn-p" onclick="saveFrais('vta')">Enregistrer</button></div>
 </div></div>
 
 <!-- Véhicule -->
@@ -734,8 +796,9 @@ function startApp(){
 //  NAVIGATION
 // ═══════════════════════════════════════════════════
 const TITLES={dashboard:'Dashboard',stock:'Stock & Achats',mouvements:'Mouvements',
-  eau:'Vignettes Eau — ONEP',elec:'Vignettes Électricité — ONEE',
+  eau:'Vignettes Eau — ONEP',elec:'Vignettes Électricité — SNTL/ONEE',
   tele:'Vignettes Télécommunications',post:'Vignettes Affranchissement & Timbres',
+  vtt:'Vignettes VTT',vta:'Vignettes VTA',
   vehicules:'Véhicules',services:'Services',fournisseurs:'Fournisseurs',
   types:'Types de vignettes',utilisateurs:'Gestion des utilisateurs',
   alertes:'Alertes de stock',logs:"Journal d'activité"};
@@ -752,6 +815,7 @@ function sp(name,btn){
 function rnd(n){
   const M={dashboard:rdDash,stock:rdStock,mouvements:rdMouv,
     eau:()=>rdFrais('eau'),elec:()=>rdFrais('elec'),tele:()=>rdFrais('tele'),post:()=>rdFrais('post'),
+    vtt:()=>rdFrais('vtt'),vta:()=>rdFrais('vta'),
     vehicules:rdVeh,services:rdSvc,fournisseurs:rdFour,types:rdTypes,
     utilisateurs:rdUsers,alertes:rdAlertes,logs:rdLogs};
   if(M[n])M[n]();badges();
@@ -802,7 +866,8 @@ function cm(id){
    ['tp-eid','mt-type','Ajouter un type de vignette'],
    ['u-eid','mt-user','Ajouter un utilisateur'],
    ['al-eid','mt-alerte','Configurer une alerte'],
-   ['pe-eid',null,null],['el-eid',null,null],['te-eid',null,null],['po-eid',null,null]
+   ['pe-eid',null,null],['el-eid',null,null],['te-eid',null,null],['po-eid',null,null],
+   ['vt-eid',null,null],['va-eid',null,null]
   ].forEach(([eid,tid,ttl])=>{
     const e=document.getElementById(eid);if(e)e.value='';
     if(tid){const t=document.getElementById(tid);if(t)t.textContent=ttl;}
@@ -820,13 +885,14 @@ function pops(){
   ['mv-svc','mv-svc2','v-svc','pe-svc','el-svc','te-svc','po-svc'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=sO;});
   const af=document.getElementById('a-four');if(af)af.innerHTML=fO||'<option value="">Aucun fournisseur</option>';
   const mv=document.getElementById('mv-veh');if(mv)mv.innerHTML=vO;
+  ['vt-veh','va-veh'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=vO;});
   const fat=document.getElementById('fa-type');if(fat)fat.innerHTML='<option value="">Tous les types</option>'+tO;
 }
 
-// Catégories qui utilisent un véhicule (fuel, other, vtt, vta)
-const CAT_USES_VEH=['fuel','other','vtt','vta'];
+// Catégories qui utilisent un véhicule (fuel, other) dans les mouvements standards
+const CAT_USES_VEH=['fuel','other'];
 // Catégories frais généraux (pas de véhicule, juste référence)
-const CAT_FRAIS=['water','elec','tele','post'];
+const CAT_FRAIS=['water','elec','tele','post','vtt','vta'];
 
 function adaptMouvForm(){
   const tid=document.getElementById('mv-type').value;
@@ -835,18 +901,20 @@ function adaptMouvForm(){
   const fVeh=document.getElementById('mv-fields-veh');
   const fSvc=document.getElementById('mv-fields-svc');
   const fRef=document.getElementById('mv-fields-ref');
+  // Avertissement si catégorie frais généraux
+  let warn=document.getElementById('mv-frais-warn');
+  if(!warn){warn=document.createElement('div');warn.id='mv-frais-warn';warn.style.cssText='display:none;background:var(--aml);border:1px solid rgba(146,64,14,.25);border-radius:6px;padding:8px 11px;font-size:12px;color:var(--am);margin-bottom:8px';document.getElementById('mv-fields-veh').parentNode.insertBefore(warn,document.getElementById('mv-fields-veh'));}
+  if(CAT_FRAIS.includes(cat)){
+    const pageMap={water:'eau',elec:'elec',tele:'tele',post:'post',vtt:'vtt',vta:'vta'};
+    warn.style.display='block';
+    warn.innerHTML=`⚠ Ce type de vignette est un frais général. Utilisez plutôt la page <strong>"${TITLES[pageMap[cat]]||cat}"</strong> pour enregistrer cette opération et éviter un double comptage.`;
+  }else{warn.style.display='none';}
   if(CAT_USES_VEH.includes(cat)){
-    // Carburant, Entretien, VTT, VTA → afficher véhicule + service
     fVeh.style.display='grid';fSvc.style.display='none';fRef.style.display='none';
   }else if(CAT_FRAIS.includes(cat)){
-    // Eau, Élec, Télécom, Affranchissement → afficher référence + service
     fVeh.style.display='none';fSvc.style.display='block';fRef.style.display='block';
-    // Mettre à jour le placeholder de la référence selon la catégorie
     const refEl=document.getElementById('mv-ref');
-    if(refEl){
-      const ph={water:'N° compteur eau…',elec:'N° compteur électricité…',tele:'N° ligne / abonnement…',post:'N° pli / référence courrier…'};
-      refEl.placeholder=ph[cat]||'Référence…';
-    }
+    if(refEl){const ph={water:'N° compteur eau…',elec:'N° compteur électricité…',tele:'N° ligne / abonnement…',post:'N° pli / référence courrier…',vtt:'Référence VTT…',vta:'Référence VTA…'};refEl.placeholder=ph[cat]||'Référence…';}
   }else{
     fVeh.style.display='none';fSvc.style.display='block';fRef.style.display='none';
   }
@@ -976,8 +1044,8 @@ function saveMouv(){
 }
 
 // frais catégorie → prefix map
-const FR_PFX={eau:'pe',elec:'el',tele:'te',post:'po'};
-const FR_CAT_MAP={eau:'water',elec:'elec',tele:'tele',post:'post'};
+const FR_PFX={eau:'pe',elec:'el',tele:'te',post:'po',vtt:'vt',vta:'va'};
+const FR_CAT_MAP={eau:'water',elec:'elec',tele:'tele',post:'post',vtt:'vtt',vta:'vta'};
 
 function saveFrais(cat){
   const pfx=FR_PFX[cat];
@@ -993,14 +1061,19 @@ function saveFrais(cat){
   const stk=types.reduce((s,t)=>s+cStock(t.id),0);
   if(stk<qte)return toast('Stock insuffisant : '+stk+' vignette'+(stk!==1?'s':'')+' disponible'+(stk!==1?'s':''),'err');
   const tid=types[0].id;
-  // extra fields
   const des=document.getElementById(pfx+'-des')?.value||'';
-  const svcId=document.getElementById(pfx+'-svc')?.value||null;
   const dest=cat==='post'?document.getElementById('po-dest')?.value||'':'';
   const tcourrier=cat==='post'?document.getElementById('po-tcourrier')?.value||'':'';
-  const obj={date,cat,catKey,tid,num,des,dest,tcourrier,qte,mont,sid:svcId,uid:CU.id};
-  if(eid){const f=DB.frais.find(x=>x.id==eid);if(f)Object.assign(f,obj);log('Modif paiement '+cat,num);toast('Paiement modifié ✓');}
-  else{DB.frais.unshift({id:nid('frais'),...obj,at:new Date().toISOString()});log('Paiement '+cat,num+' — '+qte+' vignette(s) — '+fmtM(mont));toast('Paiement enregistré ✓');}
+  // VTT/VTA : stocker l'id du véhicule dans vid, service dans sid
+  let svcId=null,vid=null;
+  if(cat==='vtt'||cat==='vta'){
+    vid=document.getElementById(pfx+'-veh')?.value||null;
+  }else{
+    svcId=document.getElementById(pfx+'-svc')?.value||null;
+  }
+  const obj={date,cat,catKey,tid,num,des,dest,tcourrier,qte,mont,sid:svcId,vid,uid:CU.id};
+  if(eid){const f=DB.frais.find(x=>x.id==eid);if(f)Object.assign(f,obj);log('Modif '+cat,num);toast(cat.toUpperCase()+' modifié ✓');}
+  else{DB.frais.unshift({id:nid('frais'),...obj,at:new Date().toISOString()});log('Enregistrement '+cat,num+' — '+qte+' vignette(s) — '+fmtM(mont));toast('Enregistré ✓');}
   chkAl();save();cm('m-frais-'+cat);rnd(cat);
 }
 
@@ -1044,10 +1117,20 @@ function editFrais(id){
   const f=DB.frais.find(x=>x.id==id);if(!f)return;
   const cat=f.cat;const pfx=FR_PFX[cat];pops();
   document.getElementById(pfx+'-eid').value=f.id;
-  document.getElementById(pfx+'-date').value=f.date;document.getElementById(pfx+'-num').value=f.num||'';
-  document.getElementById(pfx+'-des').value=f.des||'';document.getElementById(pfx+'-qte').value=f.qte;
-  document.getElementById(pfx+'-mont').value=f.mont;document.getElementById(pfx+'-svc').value=f.sid||'';
-  if(cat==='post'){document.getElementById('po-dest').value=f.dest||'';document.getElementById('po-tcourrier').value=f.tcourrier||'Lettre ordinaire';}
+  document.getElementById(pfx+'-date').value=f.date;
+  document.getElementById(pfx+'-num').value=f.num||'';
+  document.getElementById(pfx+'-des').value=f.des||'';
+  document.getElementById(pfx+'-qte').value=f.qte;
+  document.getElementById(pfx+'-mont').value=f.mont;
+  if(cat==='vtt'||cat==='vta'){
+    const vehEl=document.getElementById(pfx+'-veh');if(vehEl)vehEl.value=f.vid||'';
+  }else{
+    const svcEl=document.getElementById(pfx+'-svc');if(svcEl)svcEl.value=f.sid||'';
+  }
+  if(cat==='post'){
+    document.getElementById('po-dest').value=f.dest||'';
+    document.getElementById('po-tcourrier').value=f.tcourrier||'Lettre ordinaire';
+  }
   document.getElementById('m-frais-'+cat).classList.add('open');
 }
 function editUser(id){const u=DB.users.find(x=>x.id==id);if(!u)return;document.getElementById('u-eid').value=u.id;document.getElementById('u-nc').value=u.nc;document.getElementById('u-lg').value=u.lg;document.getElementById('u-pw').value='';document.getElementById('u-rl').value=u.role;document.getElementById('u-ac').value=u.actif;document.getElementById('mt-user').textContent='Modifier utilisateur';om('m-user');}
@@ -1095,7 +1178,8 @@ function ft(tbody,search,attr,val){
 // ═══════════════════════════════════════════════════
 function badges(){
   const m={'nb-s':DB.achats.length,'nb-m':DB.mouvs.length,'nb-v':DB.vehs.length,'nb-sv':DB.svcs.length,'nb-f':DB.fours.length,'nb-t':DB.types.length,'nb-u':DB.users.length,
-    'nb-eau':cStockCat('water'),'nb-elec':cStockCat('elec'),'nb-tele':cStockCat('tele'),'nb-post':cStockCat('post')};
+    'nb-eau':cStockCat('water'),'nb-elec':cStockCat('elec'),'nb-tele':cStockCat('tele'),'nb-post':cStockCat('post'),
+    'nb-vtt':cStockCat('vtt'),'nb-vta':cStockCat('vta')};
   Object.entries(m).forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.textContent=v;});
 }
 
@@ -1153,15 +1237,24 @@ function rdDash(){
 
 function rdStock(){
   buildSC('stock-sc');
-  // Totaux globaux
-  const totQte=DB.achats.reduce((s,a)=>s+a.qte,0);
-  const totMont=DB.achats.reduce((s,a)=>s+(a.mont||0),0);
-  const totStock=DB.types.reduce((s,t)=>s+cStock(t.id),0);
+  // Totaux par type de vignette
   const totEl=document.getElementById('stock-totaux');
-  if(totEl)totEl.innerHTML=`
-    <div class="fstat"><div class="fstat-val" style="color:var(--gn);font-size:16px">${totMont>0?fmtM(totMont):'—'}</div><div class="fstat-lbl">Montant global acheté</div><div style="font-size:12px;color:var(--mu2);margin-top:2px">${totQte.toLocaleString()} vignettes achetées au total</div></div>
-    <div class="fstat"><div class="fstat-val" style="color:var(--bl);font-size:20px">${totQte.toLocaleString()}</div><div class="fstat-lbl">Quantité totale achetée</div><div style="font-size:12px;color:var(--mu2);margin-top:2px">${DB.achats.length} achat${DB.achats.length!==1?'s':''} enregistré${DB.achats.length!==1?'s':''}</div></div>
-    <div class="fstat"><div class="fstat-val" style="color:var(--am);font-size:20px">${totStock.toLocaleString()}</div><div class="fstat-lbl">Stock total disponible</div><div style="font-size:12px;color:var(--mu2);margin-top:2px">${DB.types.length} type${DB.types.length!==1?'s':''} de vignette${DB.types.length!==1?'s':''}</div></div>`;
+  if(totEl){
+    if(!DB.types.length){totEl.innerHTML='';
+    }else{
+      totEl.style.gridTemplateColumns='repeat(auto-fill,minmax(160px,1fr))';
+      totEl.innerHTML=DB.types.map(t=>{
+        const qte=DB.achats.filter(a=>a.tid==t.id).reduce((s,a)=>s+a.qte,0);
+        const mont=DB.achats.filter(a=>a.tid==t.id).reduce((s,a)=>s+(a.mont||0),0);
+        const col=CAT_COLOR[t.cat||'other']||'var(--gn)';
+        return`<div class="fstat">
+          <div class="fstat-val" style="color:${col};font-size:15px">${mont>0?fmtM(mont):'—'}</div>
+          <div class="fstat-lbl">${t.nom}</div>
+          <div style="font-size:12px;color:var(--mu2);margin-top:2px">${qte.toLocaleString()} achetée${qte!==1?'s':''}</div>
+        </div>`;
+      }).join('');
+    }
+  }
   const fat=document.getElementById('fa-type');if(fat)fat.innerHTML='<option value="">Tous les types</option>'+DB.types.map(t=>`<option value="${t.id}">${t.nom}</option>`).join('');
   document.getElementById('t-achats').innerHTML=DB.achats.length
     ?DB.achats.map(a=>`<tr data-s="${tn(a.tid)} ${fn(a.fid)} ${a.lot||''}" data-tid="${a.tid}">
@@ -1199,16 +1292,13 @@ function rdFrais(cat){
   document.getElementById(cat+'-nb').textContent=pays.length;
   document.getElementById(cat+'-mt').textContent=tot>0?fmtM(tot):'—';
   const tbody=document.getElementById('t-'+cat);if(!tbody)return;
-  if(!pays.length){tbody.innerHTML=emptyR('Aucun paiement enregistré.',8);return;}
-  // Libellé de la colonne sid selon catégorie
-  function sidLabel(f){
-    if(cat==='tele'){
-      const m={internet:'Internet',fixe:'Tél. fixe',mobile:'Tél. mobile',mixte:'Internet + Tél.','':'—',autre:'Autre'};
-      return`<span class="badge bt">${m[f.sid||'']||f.sid||'—'}</span>`;
-    }
-    if(cat==='eau'||cat==='elec')return f.sid||'Administration générale';
-    if(cat==='post')return f.sid||'Administration générale';
-    return f.sid?sn(f.sid):'—';
+  const isVehicle=cat==='vtt'||cat==='vta';
+  if(!pays.length){tbody.innerHTML=emptyR('Aucun enregistrement.',isVehicle?8:8);return;}
+  // Libellé colonne contextuelle
+  function ctxLabel(f){
+    if(isVehicle)return f.vid?vn(f.vid):'<span class="tm">—</span>';
+    if(cat==='tele'){const m={internet:'Internet',fixe:'Tél. fixe',mobile:'Tél. mobile',mixte:'Internet + Tél.','':'—',autre:'Autre'};return`<span class="badge bt">${m[f.sid||'']||f.sid||'—'}</span>`;}
+    return f.sid||'Administration générale';
   }
   tbody.innerHTML=pays.map(f=>{
     const extraCols=cat==='post'
@@ -1221,7 +1311,7 @@ function rdFrais(cat){
       ${extraCols}
       <td><span class="badge ${CAT_BADGE[catKey]||'bg'}">${f.qte} vignette${f.qte!==1?'s':''}</span></td>
       <td class="mono">${fmtM(f.mont)}</td>
-      <td class="tm">${sidLabel(f)}</td>
+      <td class="tm">${ctxLabel(f)}</td>
       <td class="tm">${un(f.uid)}</td>
       <td>${actBtns('editFrais('+f.id+')','frais',f.id)}</td>
     </tr>`;

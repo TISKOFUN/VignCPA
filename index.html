@@ -258,9 +258,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px
 <!-- DASHBOARD -->
 <div class="page active" id="page-dashboard">
   <div class="kgrid">
-    <div class="kpi"><div class="kval" style="color:var(--gn)" id="k-tot">0</div><div class="klbl">Total vignettes</div><div class="ksub" id="k-tc">0 types</div></div>
-    <div class="kpi"><div class="kval" style="color:var(--wa)" id="k-eau">0</div><div class="klbl">Vignettes eau</div><div class="ksub">Stock ONEP disponible</div></div>
-    <div class="kpi"><div class="kval" style="color:var(--el)" id="k-elec">0</div><div class="klbl">Vignettes électricité</div><div class="ksub">Stock disponible</div></div>
+    <div class="kpi"><div class="kval" style="color:var(--gn)" id="k-tot">0</div><div class="klbl">Total vignettes en stock</div><div class="ksub" id="k-tc">0 types</div><div class="ksub" id="k-tot-mont" style="margin-top:4px;font-weight:600;color:var(--gn)"></div><div class="ksub" id="k-tot-qte"></div></div>
+    <div class="kpi"><div class="kval" style="color:var(--wa)" id="k-eau">0</div><div class="klbl">Vignettes eau (stock)</div><div class="ksub" id="k-eau-mont" style="margin-top:4px;font-weight:600;color:var(--wa)"></div><div class="ksub" id="k-eau-qte"></div></div>
+    <div class="kpi"><div class="kval" style="color:var(--el)" id="k-elec">0</div><div class="klbl">Vignettes électricité (stock)</div><div class="ksub" id="k-elec-mont" style="margin-top:4px;font-weight:600;color:var(--el)"></div><div class="ksub" id="k-elec-qte"></div></div>
     <div class="kpi"><div class="kval" style="color:var(--rd)" id="k-al">0</div><div class="klbl">Alertes actives</div><div class="ksub">Seuils dépassés</div></div>
   </div>
   <div class="sh"><div class="st">Stock par type de vignette</div></div>
@@ -277,6 +277,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px
 <div class="page" id="page-stock">
   <div class="sh"><div class="st">Stock & Achats</div><button class="btn btn-p" onclick="om('m-achat')">+ Nouvel achat</button></div>
   <div class="sc-grid" id="stock-sc" style="margin-bottom:18px"></div>
+  <!-- Totaux globaux achats -->
+  <div id="stock-totaux" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px"></div>
   <div class="fc">
     <div class="ch"><div class="ct">Historique des achats</div><div style="font-size:12px;color:var(--mu)">Stock calculé automatiquement</div></div>
     <div class="fbar">
@@ -312,7 +314,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px
   </div>
   <div class="fc">
     <div class="fbar"><input type="text" placeholder="Rechercher compteur…" oninput="ft('t-eau',this.value)"></div>
-    <table class="dt"><thead><tr><th>Date</th><th>N° Compteur</th><th>Désignation</th><th>Vignettes</th><th>Montant (MAD)</th><th>Service</th><th>Par</th><th>Actions</th></tr></thead>
+    <table class="dt"><thead><tr><th>Date</th><th>N° Compteur</th><th>Désignation</th><th>Vignettes</th><th>Montant (MAD)</th><th>Imputable à</th><th>Par</th><th>Actions</th></tr></thead>
     <tbody id="t-eau"></tbody></table>
   </div>
 </div>
@@ -328,7 +330,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px
   </div>
   <div class="fc">
     <div class="fbar"><input type="text" placeholder="Rechercher compteur…" oninput="ft('t-elec',this.value)"></div>
-    <table class="dt"><thead><tr><th>Date</th><th>N° Compteur</th><th>Désignation</th><th>Vignettes</th><th>Montant (MAD)</th><th>Service</th><th>Par</th><th>Actions</th></tr></thead>
+    <table class="dt"><thead><tr><th>Date</th><th>N° Compteur</th><th>Désignation</th><th>Vignettes</th><th>Montant (MAD)</th><th>Imputable à</th><th>Par</th><th>Actions</th></tr></thead>
     <tbody id="t-elec"></tbody></table>
   </div>
 </div>
@@ -344,7 +346,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px
   </div>
   <div class="fc">
     <div class="fbar"><input type="text" placeholder="Rechercher…" oninput="ft('t-tele',this.value)"></div>
-    <table class="dt"><thead><tr><th>Date</th><th>N° Abonnement / Ligne</th><th>Désignation</th><th>Vignettes</th><th>Montant (MAD)</th><th>Service</th><th>Par</th><th>Actions</th></tr></thead>
+    <table class="dt"><thead><tr><th>Date</th><th>N° Abonnement / Ligne</th><th>Désignation</th><th>Vignettes</th><th>Montant (MAD)</th><th>Type abonnement</th><th>Par</th><th>Actions</th></tr></thead>
     <tbody id="t-tele"></tbody></table>
   </div>
 </div>
@@ -360,7 +362,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px
   </div>
   <div class="fc">
     <div class="fbar"><input type="text" placeholder="Rechercher…" oninput="ft('t-post',this.value)"></div>
-    <table class="dt"><thead><tr><th>Date</th><th>N° Pli / Référence</th><th>Destinataire</th><th>Type courrier</th><th>Vignettes</th><th>Montant (MAD)</th><th>Service</th><th>Par</th><th>Actions</th></tr></thead>
+    <table class="dt"><thead><tr><th>Date</th><th>N° Pli / Référence</th><th>Destinataire</th><th>Type courrier</th><th>Vignettes</th><th>Montant (MAD)</th><th>Service émetteur</th><th>Par</th><th>Actions</th></tr></thead>
     <tbody id="t-post"></tbody></table>
   </div>
 </div>
@@ -455,8 +457,11 @@ body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px
   <div class="mb">
     <input type="hidden" id="mv-eid">
     <div class="fr"><div class="fg"><label class="fl">Date *</label><input class="fi" type="date" id="mv-date"></div><div class="fg"><label class="fl">Type mouvement *</label><select class="fs" id="mv-tm"><option>Sortie</option><option>Affectation</option><option>Retour</option><option>Perte</option></select></div></div>
-    <div class="fr"><div class="fg"><label class="fl">Type vignette *</label><select class="fs" id="mv-type" onchange="calcMouv()"></select></div><div class="fg"><label class="fl">Quantité *</label><input class="fi" type="number" id="mv-qte" min="1" placeholder="1" oninput="calcMouv()"></div></div>
-    <div class="fr"><div class="fg"><label class="fl">Véhicule</label><select class="fs" id="mv-veh" onchange="autoSvc()"></select></div><div class="fg"><label class="fl">Service</label><select class="fs" id="mv-svc"></select></div></div>
+    <div class="fr"><div class="fg"><label class="fl">Type vignette *</label><select class="fs" id="mv-type" onchange="calcMouv();adaptMouvForm()"></select></div><div class="fg"><label class="fl">Quantité *</label><input class="fi" type="number" id="mv-qte" min="1" placeholder="1" oninput="calcMouv()"></div></div>
+    <!-- Champs dynamiques selon catégorie -->
+    <div id="mv-fields-veh" class="fr" style="display:none"><div class="fg"><label class="fl">Véhicule</label><select class="fs" id="mv-veh" onchange="autoSvc()"></select></div><div class="fg"><label class="fl">Service affecté</label><select class="fs" id="mv-svc"></select></div></div>
+    <div id="mv-fields-svc" style="display:none"><div class="fg"><label class="fl">Service bénéficiaire</label><select class="fs" id="mv-svc2"></select></div></div>
+    <div id="mv-fields-ref" style="display:none"><div class="fg"><label class="fl">Référence / Désignation</label><input class="fi" type="text" id="mv-ref" placeholder="N° compteur, ligne, référence…"></div></div>
     <div class="fg"><label class="fl">Justificatif</label><input class="fi" type="text" id="mv-just" placeholder="Référence…"></div>
     <div class="fg"><label class="fl" style="display:flex;justify-content:space-between"><span>Montant utilisé (MAD)</span><span id="mv-hint" style="font-size:10px;color:var(--gn);display:none">● calculé depuis dernier achat</span></label>
     <input class="fi" type="number" id="mv-mont" step="0.01" placeholder="0.00"></div>
@@ -474,7 +479,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px
     <div class="fr"><div class="fg"><label class="fl">Date *</label><input class="fi" type="date" id="pe-date"></div><div class="fg"><label class="fl">N° Compteur *</label><input class="fi" type="text" id="pe-num" placeholder="ONEP-001"></div></div>
     <div class="fg"><label class="fl">Désignation / Adresse</label><input class="fi" type="text" id="pe-des" placeholder="Bâtiment principal…"></div>
     <div class="fr"><div class="fg"><label class="fl">Vignettes utilisées *</label><input class="fi" type="number" id="pe-qte" min="1" placeholder="1" oninput="showStock('water','pe-stk-info',this.value)"></div><div class="fg"><label class="fl">Montant payé (MAD) *</label><input class="fi" type="number" id="pe-mont" step="0.01" placeholder="0.00"></div></div>
-    <div class="fg"><label class="fl">Service</label><select class="fs" id="pe-svc"></select></div>
+    <div class="fg"><label class="fl">Imputable à</label><select class="fs" id="pe-svc"><option value="">Administration générale</option></select></div>
+    <div style="font-size:11px;color:var(--mu);margin-top:-6px;margin-bottom:8px">Ces frais sont des frais généraux de consommation de l'administration.</div>
     <div id="pe-stk-info" style="font-size:12px;color:var(--mu);margin-top:2px"></div>
   </div>
   <div class="mf"><button class="btn" onclick="cm('m-frais-eau')">Annuler</button><button class="btn btn-wa" onclick="saveFrais('eau')">Enregistrer le paiement</button></div>
@@ -489,7 +495,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px
     <div class="fr"><div class="fg"><label class="fl">Date *</label><input class="fi" type="date" id="el-date"></div><div class="fg"><label class="fl">N° Compteur *</label><input class="fi" type="text" id="el-num" placeholder="SNTL-001"></div></div>
     <div class="fg"><label class="fl">Désignation / Adresse</label><input class="fi" type="text" id="el-des" placeholder="Bâtiment principal…"></div>
     <div class="fr"><div class="fg"><label class="fl">Vignettes utilisées *</label><input class="fi" type="number" id="el-qte" min="1" placeholder="1" oninput="showStock('elec','el-stk-info',this.value)"></div><div class="fg"><label class="fl">Montant payé (MAD) *</label><input class="fi" type="number" id="el-mont" step="0.01" placeholder="0.00"></div></div>
-    <div class="fg"><label class="fl">Service</label><select class="fs" id="el-svc"></select></div>
+    <div class="fg"><label class="fl">Imputable à</label><select class="fs" id="el-svc"><option value="">Administration générale</option></select></div>
+    <div style="font-size:11px;color:var(--mu);margin-top:-6px;margin-bottom:8px">Ces frais sont des frais généraux de consommation électrique de l'administration.</div>
     <div id="el-stk-info" style="font-size:12px;color:var(--mu);margin-top:2px"></div>
   </div>
   <div class="mf"><button class="btn" onclick="cm('m-frais-elec')">Annuler</button><button class="btn btn-el" onclick="saveFrais('elec')">Enregistrer le paiement</button></div>
@@ -503,7 +510,17 @@ body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px
     <div class="fr"><div class="fg"><label class="fl">Date *</label><input class="fi" type="date" id="te-date"></div><div class="fg"><label class="fl">N° Abonnement / Ligne *</label><input class="fi" type="text" id="te-num" placeholder="0537-001"></div></div>
     <div class="fg"><label class="fl">Désignation</label><input class="fi" type="text" id="te-des" placeholder="Ligne fixe direction…"></div>
     <div class="fr"><div class="fg"><label class="fl">Vignettes utilisées *</label><input class="fi" type="number" id="te-qte" min="1" placeholder="1" oninput="showStock('tele','te-stk-info',this.value)"></div><div class="fg"><label class="fl">Montant payé (MAD) *</label><input class="fi" type="number" id="te-mont" step="0.01" placeholder="0.00"></div></div>
-    <div class="fg"><label class="fl">Service</label><select class="fs" id="te-svc"></select></div>
+    <div class="fg"><label class="fl">Type d'abonnement</label>
+      <select class="fs" id="te-svc">
+        <option value="">-- Sélectionner --</option>
+        <option value="internet">Abonnement Internet</option>
+        <option value="fixe">Téléphone fixe</option>
+        <option value="mobile">Téléphone mobile</option>
+        <option value="mixte">Internet + Téléphone</option>
+        <option value="autre">Autre</option>
+      </select>
+    </div>
+    <div style="font-size:11px;color:var(--mu);margin-top:-6px;margin-bottom:8px">Frais d'abonnement internet, téléphone fixe ou téléphone mobile de l'administration.</div>
     <div id="te-stk-info" style="font-size:12px;color:var(--mu);margin-top:2px"></div>
   </div>
   <div class="mf"><button class="btn" onclick="cm('m-frais-tele')">Annuler</button><button class="btn btn-te" onclick="saveFrais('tele')">Enregistrer le paiement</button></div>
@@ -517,7 +534,12 @@ body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px
     <div class="fr"><div class="fg"><label class="fl">Date *</label><input class="fi" type="date" id="po-date"></div><div class="fg"><label class="fl">N° Pli / Référence *</label><input class="fi" type="text" id="po-num" placeholder="PLI-2024-001"></div></div>
     <div class="fr"><div class="fg"><label class="fl">Destinataire *</label><input class="fi" type="text" id="po-dest" placeholder="Ministère de…"></div><div class="fg"><label class="fl">Type courrier</label><select class="fs" id="po-tcourrier"><option>Lettre ordinaire</option><option>Lettre recommandée</option><option>Colis postal</option><option>Envoi express</option><option>Télégramme</option><option>Autre</option></select></div></div>
     <div class="fr"><div class="fg"><label class="fl">Vignettes / timbres utilisés *</label><input class="fi" type="number" id="po-qte" min="1" placeholder="1" oninput="showStock('post','po-stk-info',this.value)"></div><div class="fg"><label class="fl">Montant affranchissement (MAD) *</label><input class="fi" type="number" id="po-mont" step="0.01" placeholder="0.00"></div></div>
-    <div class="fg"><label class="fl">Service expéditeur</label><select class="fs" id="po-svc"></select></div>
+    <div class="fg"><label class="fl">Service émetteur du courrier</label>
+      <select class="fs" id="po-svc">
+        <option value="">Administration générale</option>
+      </select>
+    </div>
+    <div style="font-size:11px;color:var(--mu);margin-top:-6px;margin-bottom:8px">Frais d'envoi de courrier postal de l'administration générale vers les destinataires externes.</div>
     <div id="po-stk-info" style="font-size:12px;color:var(--mu);margin-top:2px"></div>
   </div>
   <div class="mf"><button class="btn" onclick="cm('m-frais-post')">Annuler</button><button class="btn btn-po" onclick="saveFrais('post')">Enregistrer l'envoi</button></div>
@@ -573,6 +595,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px
         <option value="elec">Électricité (SNTL/ONEE)</option>
         <option value="tele">Télécommunications</option>
         <option value="post">Affranchissement & Timbres</option>
+        <option value="vtt">VTT</option>
+        <option value="vta">VTA</option>
       </select>
     </div>
     <div class="fg"><label class="fl">Description</label><textarea class="fta" id="tp-desc"></textarea></div>
@@ -661,9 +685,9 @@ function cStock(tid){
 function cStockCat(cat){return DB.types.filter(t=>t.cat===cat).reduce((s,t)=>s+cStock(t.id),0);}
 
 // Cat color/badge helpers
-const CAT_COLOR={water:'var(--wa)',elec:'var(--el)',fuel:'var(--am)',tele:'var(--cy)',post:'var(--pk)',other:'var(--gn)'};
-const CAT_LABEL={water:'💧 Eau',elec:'⚡ Électricité',fuel:'⛽ Carburant',tele:'📡 Télécom',post:'✉️ Affranchissement',other:'🔧 Entretien/Répar.'};
-const CAT_BADGE={water:'bw',elec:'be',fuel:'ba',tele:'bt',post:'bp',other:'bg'};
+const CAT_COLOR={water:'var(--wa)',elec:'var(--el)',fuel:'var(--am)',tele:'var(--cy)',post:'var(--pk)',other:'var(--gn)',vtt:'var(--bl)',vta:'var(--rd)'};
+const CAT_LABEL={water:'💧 Eau',elec:'⚡ Électricité',fuel:'⛽ Carburant',tele:'📡 Télécom',post:'✉️ Affranchissement',other:'🔧 Entretien/Répar.',vtt:'🚗 VTT',vta:'🚙 VTA'};
+const CAT_BADGE={water:'bw',elec:'be',fuel:'ba',tele:'bt',post:'bp',other:'bg',vtt:'bb',vta:'br'};
 function catB(c){return`<span class="badge ${CAT_BADGE[c]||'bg'}">${CAT_LABEL[c]||c}</span>`;}
 
 // ═══════════════════════════════════════════════════
@@ -793,10 +817,39 @@ function pops(){
   const fO=DB.fours.map(f=>`<option value="${f.id}">${f.nom}</option>`).join('');
   const vO='<option value="">-- Aucun --</option>'+DB.vehs.map(v=>`<option value="${v.id}">${v.immat}</option>`).join('');
   ['a-type','mv-type','al-type'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=tO||'<option value="">Aucun type</option>';});
-  ['mv-svc','v-svc','pe-svc','el-svc','te-svc','po-svc'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=sO;});
+  ['mv-svc','mv-svc2','v-svc','pe-svc','el-svc','te-svc','po-svc'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=sO;});
   const af=document.getElementById('a-four');if(af)af.innerHTML=fO||'<option value="">Aucun fournisseur</option>';
   const mv=document.getElementById('mv-veh');if(mv)mv.innerHTML=vO;
   const fat=document.getElementById('fa-type');if(fat)fat.innerHTML='<option value="">Tous les types</option>'+tO;
+}
+
+// Catégories qui utilisent un véhicule (fuel, other, vtt, vta)
+const CAT_USES_VEH=['fuel','other','vtt','vta'];
+// Catégories frais généraux (pas de véhicule, juste référence)
+const CAT_FRAIS=['water','elec','tele','post'];
+
+function adaptMouvForm(){
+  const tid=document.getElementById('mv-type').value;
+  const type=DB.types.find(t=>t.id==tid);
+  const cat=type?type.cat||'other':'other';
+  const fVeh=document.getElementById('mv-fields-veh');
+  const fSvc=document.getElementById('mv-fields-svc');
+  const fRef=document.getElementById('mv-fields-ref');
+  if(CAT_USES_VEH.includes(cat)){
+    // Carburant, Entretien, VTT, VTA → afficher véhicule + service
+    fVeh.style.display='grid';fSvc.style.display='none';fRef.style.display='none';
+  }else if(CAT_FRAIS.includes(cat)){
+    // Eau, Élec, Télécom, Affranchissement → afficher référence + service
+    fVeh.style.display='none';fSvc.style.display='block';fRef.style.display='block';
+    // Mettre à jour le placeholder de la référence selon la catégorie
+    const refEl=document.getElementById('mv-ref');
+    if(refEl){
+      const ph={water:'N° compteur eau…',elec:'N° compteur électricité…',tele:'N° ligne / abonnement…',post:'N° pli / référence courrier…'};
+      refEl.placeholder=ph[cat]||'Référence…';
+    }
+  }else{
+    fVeh.style.display='none';fSvc.style.display='block';fRef.style.display='none';
+  }
 }
 
 // ═══════════════════════════════════════════════════
@@ -903,7 +956,20 @@ function saveMouv(){
   const isSortie=['Sortie','Affectation','Perte'].includes(tm);
   if(isSortie&&stk<qte)return toast('Stock insuffisant ('+stk+' disponibles)','err');
   const rel=isSortie?stk-qte:stk+qte;
-  const obj={date,tm,tid,qte,vid:document.getElementById('mv-veh').value||null,sid:document.getElementById('mv-svc').value||null,just:document.getElementById('mv-just').value,mont:parseFloat(document.getElementById('mv-mont').value)||0,rel,uid:CU.id};
+  // Récupérer véhicule/service/ref selon catégorie
+  const type=DB.types.find(t=>t.id==tid);
+  const cat=type?type.cat||'other':'other';
+  let vid=null,sid=null,ref='';
+  if(CAT_USES_VEH.includes(cat)){
+    vid=document.getElementById('mv-veh').value||null;
+    sid=document.getElementById('mv-svc').value||null;
+  }else if(CAT_FRAIS.includes(cat)){
+    sid=document.getElementById('mv-svc2').value||null;
+    ref=document.getElementById('mv-ref').value||'';
+  }else{
+    sid=document.getElementById('mv-svc2').value||null;
+  }
+  const obj={date,tm,tid,qte,vid,sid,ref,just:document.getElementById('mv-just').value,mont:parseFloat(document.getElementById('mv-mont').value)||0,rel,uid:CU.id};
   if(eid){const m=DB.mouvs.find(x=>x.id==eid);if(m)Object.assign(m,obj);log('Modif mouvement',tn(tid));toast('Mouvement modifié ✓');}
   else{DB.mouvs.unshift({id:nid('mouvs'),...obj,at:new Date().toISOString()});log('Mouvement '+tm,tn(tid)+' ×'+qte);toast('Mouvement enregistré ✓');}
   chkAl();save();cm('m-mouv');rnd('mouvements');
@@ -1059,10 +1125,22 @@ function buildSC(cid){
 // ═══════════════════════════════════════════════════
 function rdDash(){
   const tot=DB.types.reduce((s,t)=>s+cStock(t.id),0);
+  const totQteAch=DB.achats.reduce((s,a)=>s+a.qte,0);
+  const totMont=DB.achats.reduce((s,a)=>s+(a.mont||0),0);
+  const eauQte=DB.types.filter(t=>t.cat==='water').reduce((s,t)=>s+DB.achats.filter(a=>a.tid==t.id).reduce((q,a)=>q+a.qte,0),0);
+  const eauMont=DB.types.filter(t=>t.cat==='water').reduce((s,t)=>s+DB.achats.filter(a=>a.tid==t.id).reduce((q,a)=>q+(a.mont||0),0),0);
+  const elecQte=DB.types.filter(t=>t.cat==='elec').reduce((s,t)=>s+DB.achats.filter(a=>a.tid==t.id).reduce((q,a)=>q+a.qte,0),0);
+  const elecMont=DB.types.filter(t=>t.cat==='elec').reduce((s,t)=>s+DB.achats.filter(a=>a.tid==t.id).reduce((q,a)=>q+(a.mont||0),0),0);
   document.getElementById('k-tot').textContent=tot.toLocaleString();
   document.getElementById('k-tc').textContent=DB.types.length+' types';
+  document.getElementById('k-tot-mont').textContent=totMont>0?fmtM(totMont):'';
+  document.getElementById('k-tot-qte').textContent=totQteAch>0?totQteAch.toLocaleString()+' achetées au total':'';
   document.getElementById('k-eau').textContent=cStockCat('water').toLocaleString();
+  document.getElementById('k-eau-mont').textContent=eauMont>0?fmtM(eauMont):'';
+  document.getElementById('k-eau-qte').textContent=eauQte>0?eauQte.toLocaleString()+' achetées':'';
   document.getElementById('k-elec').textContent=cStockCat('elec').toLocaleString();
+  document.getElementById('k-elec-mont').textContent=elecMont>0?fmtM(elecMont):'';
+  document.getElementById('k-elec-qte').textContent=elecQte>0?elecQte.toLocaleString()+' achetées':'';
   document.getElementById('k-al').textContent=DB.alertes.filter(a=>a.statut==='Déclenché').length;
   buildSC('dash-sc');
   document.getElementById('d-mouv').innerHTML=DB.mouvs.slice(0,6).length
@@ -1075,6 +1153,15 @@ function rdDash(){
 
 function rdStock(){
   buildSC('stock-sc');
+  // Totaux globaux
+  const totQte=DB.achats.reduce((s,a)=>s+a.qte,0);
+  const totMont=DB.achats.reduce((s,a)=>s+(a.mont||0),0);
+  const totStock=DB.types.reduce((s,t)=>s+cStock(t.id),0);
+  const totEl=document.getElementById('stock-totaux');
+  if(totEl)totEl.innerHTML=`
+    <div class="fstat"><div class="fstat-val" style="color:var(--gn);font-size:16px">${totMont>0?fmtM(totMont):'—'}</div><div class="fstat-lbl">Montant global acheté</div><div style="font-size:12px;color:var(--mu2);margin-top:2px">${totQte.toLocaleString()} vignettes achetées au total</div></div>
+    <div class="fstat"><div class="fstat-val" style="color:var(--bl);font-size:20px">${totQte.toLocaleString()}</div><div class="fstat-lbl">Quantité totale achetée</div><div style="font-size:12px;color:var(--mu2);margin-top:2px">${DB.achats.length} achat${DB.achats.length!==1?'s':''} enregistré${DB.achats.length!==1?'s':''}</div></div>
+    <div class="fstat"><div class="fstat-val" style="color:var(--am);font-size:20px">${totStock.toLocaleString()}</div><div class="fstat-lbl">Stock total disponible</div><div style="font-size:12px;color:var(--mu2);margin-top:2px">${DB.types.length} type${DB.types.length!==1?'s':''} de vignette${DB.types.length!==1?'s':''}</div></div>`;
   const fat=document.getElementById('fa-type');if(fat)fat.innerHTML='<option value="">Tous les types</option>'+DB.types.map(t=>`<option value="${t.id}">${t.nom}</option>`).join('');
   document.getElementById('t-achats').innerHTML=DB.achats.length
     ?DB.achats.map(a=>`<tr data-s="${tn(a.tid)} ${fn(a.fid)} ${a.lot||''}" data-tid="${a.tid}">
@@ -1108,18 +1195,25 @@ function rdFrais(cat){
   const stk=cStockCat(catKey);
   const pays=DB.frais.filter(f=>f.cat===cat);
   const tot=pays.reduce((s,f)=>s+(f.mont||0),0);
-  // Update stats
   document.getElementById(cat+'-stk').textContent=stk.toLocaleString();
   document.getElementById(cat+'-nb').textContent=pays.length;
   document.getElementById(cat+'-mt').textContent=tot>0?fmtM(tot):'—';
-  // Table
   const tbody=document.getElementById('t-'+cat);if(!tbody)return;
   if(!pays.length){tbody.innerHTML=emptyR('Aucun paiement enregistré.',8);return;}
+  // Libellé de la colonne sid selon catégorie
+  function sidLabel(f){
+    if(cat==='tele'){
+      const m={internet:'Internet',fixe:'Tél. fixe',mobile:'Tél. mobile',mixte:'Internet + Tél.','':'—',autre:'Autre'};
+      return`<span class="badge bt">${m[f.sid||'']||f.sid||'—'}</span>`;
+    }
+    if(cat==='eau'||cat==='elec')return f.sid||'Administration générale';
+    if(cat==='post')return f.sid||'Administration générale';
+    return f.sid?sn(f.sid):'—';
+  }
   tbody.innerHTML=pays.map(f=>{
     const extraCols=cat==='post'
       ?`<td class="tm">${f.dest||'—'}</td><td><span class="badge bp">${f.tcourrier||'—'}</span></td>`
       :'';
-    const postTh=cat==='post'?2:0; // post has 2 extra cols
     return`<tr data-s="${f.num} ${f.des||''} ${f.dest||''}">
       <td class="mono">${fmt(f.date)}</td>
       <td class="mono"><strong>${f.num}</strong></td>
@@ -1127,7 +1221,7 @@ function rdFrais(cat){
       ${extraCols}
       <td><span class="badge ${CAT_BADGE[catKey]||'bg'}">${f.qte} vignette${f.qte!==1?'s':''}</span></td>
       <td class="mono">${fmtM(f.mont)}</td>
-      <td class="tm">${f.sid?sn(f.sid):'—'}</td>
+      <td class="tm">${sidLabel(f)}</td>
       <td class="tm">${un(f.uid)}</td>
       <td>${actBtns('editFrais('+f.id+')','frais',f.id)}</td>
     </tr>`;

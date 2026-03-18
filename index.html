@@ -3,10 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VignetteManager Pro - Gestion des Vignettes & Contrôles Internes</title>
+<title>VignetteManager</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Unbounded:wght@400;600;800&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 :root{
   --bg:#f5f4f0;--sf:#fff;--sf2:#f0efe9;--bd:#e2e0d8;--bd2:#ccc9bc;
@@ -26,7 +24,6 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px;line-height:1.6;min-height:100vh}
-
 /* LOGIN */
 #ls{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--tx)}
 .lbox{background:var(--sf);border-radius:16px;padding:40px;width:380px;box-shadow:0 24px 64px rgba(0,0,0,.3)}
@@ -34,12 +31,10 @@ body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px
 .lsub{font-size:11px;color:var(--mu);margin-bottom:26px;text-transform:uppercase;letter-spacing:.06em}
 .lerr{background:var(--rdl);color:var(--rd);border:1px solid rgba(196,70,10,.2);border-radius:6px;padding:10px 12px;font-size:13px;margin-bottom:14px;display:none}
 .dh{margin-top:14px;padding:12px;background:var(--sf2);border-radius:6px;font-size:11px;color:var(--mu);line-height:2}
-
 /* APP */
 #app{display:none;min-height:100vh}
 #app.on{display:flex;flex-direction:column}
 .al{display:flex;flex:1}
-
 /* SIDEBAR */
 .sidebar{width:242px;min-width:242px;background:var(--tx);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
 .sidebar::-webkit-scrollbar{width:3px}.sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:10px}
@@ -63,18 +58,19 @@ body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px
 .nic{font-size:13px;width:16px;text-align:center;flex-shrink:0}
 .nbadge{margin-left:auto;background:rgba(255,255,255,.1);color:rgba(255,255,255,.45);font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:10px}
 .nbtn.active .nbadge{background:rgba(255,255,255,.2);color:#fff}
-
+.nbtn.nwater:hover,.nbtn.nwater.active{background:rgba(3,105,161,.55);color:#fff}
+.nbtn.nelec:hover,.nbtn.nelec.active{background:rgba(124,58,237,.55);color:#fff}
+.nbtn.ntele:hover,.nbtn.ntele.active{background:rgba(15,118,110,.55);color:#fff}
+.nbtn.npost:hover,.nbtn.npost.active{background:rgba(190,24,93,.55);color:#fff}
 /* TOPBAR */
 .topbar{background:var(--sf);border-bottom:1px solid var(--bd);padding:10px 26px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
 .pttl{font-family:var(--disp);font-size:13px;font-weight:600;letter-spacing:-.01em}
 .clock-box{font-family:var(--mono);font-size:11px;color:var(--mu);background:var(--sf2);border:1px solid var(--bd);border-radius:6px;padding:5px 11px;text-align:right;line-height:1.4}
 .clock-t{font-size:13px;font-weight:500;color:var(--tx)}
-
 /* MAIN */
 .main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
 .page{display:none;padding:22px 26px 60px}
 .page.active{display:block}
-
 /* BUTTONS */
 .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:var(--r);border:1px solid var(--bd);background:var(--sf);color:var(--tx);font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
 .btn:hover{background:var(--sf2);border-color:var(--bd2)}
@@ -90,26 +86,36 @@ body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px
 .btn-sm{padding:5px 10px;font-size:12px}
 .btn-g{background:transparent;border-color:transparent;color:var(--mu)}.btn-g:hover{background:var(--sf2);border-color:var(--bd)}
 .acts{display:flex;gap:4px;align-items:center}
-
 /* KPI */
 .kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
 .kpi{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:15px 17px;box-shadow:var(--sh)}
 .kval{font-family:var(--disp);font-size:24px;font-weight:800;letter-spacing:-.03em;line-height:1;margin-bottom:4px}
 .klbl{font-size:11px;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;font-weight:500}
 .ksub{font-size:11px;color:var(--mu2);margin-top:2px}
-
+/* STOCK CARDS */
+.sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:11px;margin-bottom:20px}
+.sc{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh);position:relative;overflow:hidden}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--gn)}
+.sc.cwater::before{background:var(--wa)}.sc.celec::before{background:var(--el)}
+.sc.cfuel::before{background:var(--am)}.sc.ctele::before{background:var(--cy)}
+.sc.cpost::before{background:var(--pk)}.sc.center::before{background:var(--mu)}
+.sc-lbl{font-size:10px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.sc-val{font-family:var(--disp);font-size:24px;font-weight:800;letter-spacing:-.03em;line-height:1;margin-bottom:2px}
+.sc-sub{font-size:11px;color:var(--mu2)}
+.sc-bar{height:4px;background:var(--bd);border-radius:2px;margin-top:9px;overflow:hidden}
+.sc-fill{height:100%;border-radius:2px}
 /* TABLE CARDS */
-.card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;margin-bottom:20px}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
 .ch{padding:11px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
 .ct{font-size:13px;font-weight:600}
-
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.fc{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
 /* TABLE */
 .dt{width:100%;border-collapse:collapse}
 .dt th{background:var(--sf2);padding:8px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);border-bottom:1px solid var(--bd);white-space:nowrap}
 .dt td{padding:9px 12px;border-bottom:1px solid var(--bd);font-size:13px;vertical-align:middle}
 .dt tr:last-child td{border-bottom:none}
 .dt tbody tr:hover td{background:var(--sf2)}
-
 /* BADGES */
 .badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
 .bg{background:var(--gnl);color:var(--gn)}.br{background:var(--rdl);color:var(--rd)}
@@ -120,740 +126,1741 @@ body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px
 .r-admin{background:rgba(220,38,38,.1);color:#dc2626;border:1px solid rgba(220,38,38,.2);font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;text-transform:uppercase}
 .r-manager{background:rgba(30,58,138,.1);color:#1e3a8a;border:1px solid rgba(30,58,138,.2);font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;text-transform:uppercase}
 .r-agent{background:rgba(26,92,46,.1);color:var(--gn);border:1px solid rgba(26,92,46,.2);font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;text-transform:uppercase}
-.r-auditor{background:rgba(124,58,237,.1);color:#7c3aed;border:1px solid rgba(124,58,237,.2);font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;text-transform:uppercase}
-
 /* SECTION */
 .sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;flex-wrap:wrap;gap:8px}
 .st{font-family:var(--disp);font-size:13px;font-weight:600}
 .sha{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
-
 /* FILTER */
 .fbar{padding:8px 12px;border-bottom:1px solid var(--bd);display:flex;gap:8px;align-items:center;background:var(--sf2);flex-wrap:wrap}
 .fbar input,.fbar select{padding:5px 9px;border:1px solid var(--bd);border-radius:6px;font-family:var(--sans);font-size:12px;background:var(--sf);outline:none;color:var(--tx)}
 .fbar input:focus,.fbar select:focus{border-color:var(--gn)}
-
 /* MODAL */
 .ov{display:none;position:fixed;inset:0;background:rgba(26,25,22,.5);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
 .ov.open{display:flex}
 .modal{background:var(--sf);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.2);width:500px;max-width:96vw;max-height:93vh;overflow-y:auto;animation:up .2s ease}
-.modal.wide{width:680px}
+.modal.wide{width:580px}
 @keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .mh{padding:14px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
 .mt{font-family:var(--disp);font-size:12px;font-weight:700}
 .xb{background:none;border:none;font-size:20px;cursor:pointer;color:var(--mu);padding:2px 6px;border-radius:4px;line-height:1}
-.xb:hover{background:var(--sf2);color:var(--tx)}
-.mb{padding:18px;display:flex;flex-direction:column;gap:12px}
-.mf{padding:14px 18px;border-top:1px solid var(--bd);display:flex;gap:8px;justify-content:flex-end}
-.fr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.fg{display:flex;flex-direction:column;gap:4px}
-.fl{font-size:12px;font-weight:600;color:var(--tx)}
-.fi,.fs{padding:7px 10px;border:1px solid var(--bd);border-radius:6px;font-family:var(--sans);font-size:13px;background:var(--sf);outline:none;color:var(--tx);transition:all .15s}
-.fi:focus,.fs:focus{border-color:var(--gn);box-shadow:0 0 0 3px rgba(26,92,46,.1)}
-
+.xb:hover{background:var(--sf2)}
+.mb{padding:16px 18px}.mf{padding:12px 18px;border-top:1px solid var(--bd);display:flex;justify-content:flex-end;gap:8px}
+.fg{margin-bottom:12px}
+.fl{display:block;font-size:11px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.fi,.fs,.fta{width:100%;padding:8px 10px;border:1px solid var(--bd);border-radius:6px;font-family:var(--sans);font-size:13px;color:var(--tx);background:var(--sf);outline:none;transition:border-color .15s,box-shadow .15s}
+.fi:focus,.fs:focus,.fta:focus{border-color:var(--gn);box-shadow:0 0 0 3px rgba(26,92,46,.1)}
+.fta{resize:vertical;min-height:68px}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+/* FRAIS PAGE */
+.fh{border-radius:var(--r);padding:18px 22px;margin-bottom:18px;color:#fff;display:flex;align-items:center;justify-content:space-between}
+.fh.water{background:linear-gradient(135deg,var(--wa),#0284c7)}
+.fh.elec{background:linear-gradient(135deg,var(--el),#6d28d9)}
+.fh.tele{background:linear-gradient(135deg,var(--cy),#0f766e)}
+.fh.post{background:linear-gradient(135deg,var(--pk),#9d1460)}
+.fh-title{font-family:var(--disp);font-size:15px;font-weight:800;margin-bottom:3px}
+.fh-sub{font-size:12px;opacity:.75}
+.fstats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.fstat{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:13px 15px;box-shadow:var(--sh)}
+.fstat-val{font-family:var(--disp);font-size:18px;font-weight:800;letter-spacing:-.02em;line-height:1;margin-bottom:3px}
+.fstat-lbl{font-size:11px;color:var(--mu);text-transform:uppercase;letter-spacing:.05em}
+/* STOCK BAR */
+.sb{height:5px;background:var(--bd);border-radius:3px;overflow:hidden;width:90px;display:inline-block;vertical-align:middle}
+.sf2{height:100%;border-radius:3px}
+/* IMPORT DROP */
+.import-hint{background:var(--bll);border:1px solid rgba(30,58,138,.15);border-radius:8px;padding:11px 13px;font-size:12px;color:var(--bl);margin-bottom:13px;line-height:1.8}
+.import-hint code{display:block;margin-top:5px;background:rgba(30,58,138,.08);padding:6px 9px;border-radius:5px;font-family:var(--mono);font-size:11px}
+.drop{border:2px dashed var(--bd2);border-radius:10px;padding:24px 18px;text-align:center;transition:all .2s;cursor:pointer}
+.drop:hover,.drop.drag{border-color:var(--gn);background:var(--gnl)}
+.drop-ic{font-size:26px;margin-bottom:7px}
+.drop-txt{font-size:13px;color:var(--mu);margin-bottom:9px}
+.ipreview{margin-top:12px;max-height:200px;overflow:auto;font-size:12px}
+.ipreview table{width:100%;border-collapse:collapse}
+.ipreview th{background:var(--sf2);padding:5px 9px;text-align:left;border-bottom:1px solid var(--bd);font-size:10px;text-transform:uppercase;color:var(--mu)}
+.ipreview td{padding:5px 9px;border-bottom:1px solid var(--bd)}
+.icount{font-size:12px;color:var(--gn);font-weight:600;margin-bottom:7px}
+/* EMPTY */
+.empty{text-align:center;padding:38px 20px;color:var(--mu)}
+.eic{font-size:28px;margin-bottom:7px}
+.et{font-size:13px;font-weight:600;color:var(--mu);margin-bottom:3px}
+.ed{font-size:12px;color:var(--mu2)}
 /* TOAST */
-.toast{position:fixed;bottom:20px;right:20px;background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:12px 16px;box-shadow:0 8px 24px rgba(0,0,0,.12);font-size:13px;max-width:300px;animation:slideIn .3s ease;z-index:300}
-.toast.err{border-color:var(--rd);background:var(--rdl);color:var(--rd)}
-.toast.ok{border-color:var(--gn);background:var(--gnl);color:var(--gn)}
-@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+#toast{display:none;position:fixed;bottom:20px;right:20px;padding:10px 15px;border-radius:var(--r);font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:999;animation:si .25s ease;max-width:300px;color:#fff}
+@keyframes si{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+#toast.ok{background:var(--gn)}#toast.err{background:var(--rd)}#toast.info{background:var(--bl)}#toast.warn{background:var(--am)}
+.mono{font-family:var(--mono);font-size:12px}.tm{color:var(--mu2)}
+@media(max-width:800px){.sidebar{display:none}.kgrid{grid-template-columns:repeat(2,1fr)}.dgrid{grid-template-columns:1fr}.sc-grid{grid-template-columns:repeat(2,1fr)}}
+</style></head><body>
 
-/* RBAC STYLES */
-.rbac-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-bottom:20px}
-.rbac-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:14px;cursor:pointer;transition:all .15s}
-.rbac-card:hover{border-color:var(--gn);box-shadow:0 4px 12px rgba(26,92,46,.1)}
-.rbac-card.active{border-color:var(--gn);background:var(--gnl)}
-.rbac-title{font-weight:600;font-size:13px;margin-bottom:8px;color:var(--tx)}
-.rbac-desc{font-size:11px;color:var(--mu);line-height:1.5;margin-bottom:10px}
-.rbac-perms{display:flex;flex-direction:column;gap:6px}
-.rbac-perm{display:flex;align-items:center;gap:8px;font-size:12px}
-.rbac-perm input{cursor:pointer}
-
-/* EXPORT STYLES */
-.export-section{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:16px;margin-bottom:20px}
-.export-title{font-weight:600;font-size:13px;margin-bottom:12px;color:var(--tx)}
-.export-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
-.export-btn{display:flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--bd);border-radius:6px;background:var(--sf2);cursor:pointer;transition:all .15s;font-size:12px;font-weight:500}
-.export-btn:hover{background:var(--bd);border-color:var(--bd2)}
-.export-btn.active{background:var(--gn);color:#fff;border-color:var(--gn)}
-</style>
-</head>
-<body>
-
-<!-- LOGIN SCREEN -->
+<!-- LOGIN -->
 <div id="ls">
   <div class="lbox">
-    <div class="llogo">🎫 VignetteManager</div>
-    <div class="lsub">Gestion Intégrée</div>
-    <div class="lerr" id="lerr"></div>
-    <div class="fg" style="margin-bottom:12px">
-      <label class="fl">Identifiant</label>
-      <input class="fi" type="text" id="lg" placeholder="admin" onkeypress="if(event.key==='Enter')login()">
+    <div class="llogo">VignetteManager</div>
+    <div class="lsub">Système de gestion des vignettes</div>
+    <div class="lerr" id="lerr">Identifiants incorrects ou compte inactif.</div>
+    <div class="fg"><label class="fl">Identifiant</label><input class="fi" id="l-u" type="text" placeholder="admin" autocomplete="username"></div>
+    <div class="fg"><label class="fl">Mot de passe</label><input class="fi" id="l-p" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+    <button class="btn btn-p" style="width:100%;justify-content:center" onclick="doLogin()">Se connecter</button>
+    <div class="dh"><strong>Comptes de démonstration</strong><br>admin / admin123 → Administrateur<br>manager / mgr123 → Gestionnaire<br>agent / agt123 → Agent</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app"><div class="al">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="slogo"><div class="slogon">Vignette<br>Manager</div><div class="slogos">Gestion du stock</div></div>
+  <div class="upill">
+    <div class="uav" id="uav">A</div>
+    <div class="uinfo"><div class="uname" id="uname">—</div><div class="urole" id="urole">—</div></div>
+    <button class="lout" onclick="doLogout()" title="Déconnexion">⏻</button>
+  </div>
+  <nav class="nav">
+    <div class="nlbl">Tableau de bord</div>
+    <button class="nbtn active" data-page="dashboard" onclick="sp('dashboard',this)"><span class="nic">📊</span>Dashboard</button>
+    <div class="nlbl">Stock & Mouvements</div>
+    <button class="nbtn" data-page="stock" onclick="sp('stock',this)"><span class="nic">📦</span>Stock & Achats<span class="nbadge" id="nb-s">0</span></button>
+    <button class="nbtn" data-page="mouvements" onclick="sp('mouvements',this)"><span class="nic">🔄</span>Mouvements<span class="nbadge" id="nb-m">0</span></button>
+    <div class="nlbl">Frais généraux</div>
+    <button class="nbtn nwater" data-page="eau" onclick="sp('eau',this)"><span class="nic">💧</span>Vignettes Eau<span class="nbadge" id="nb-eau">0</span></button>
+    <button class="nbtn nelec" data-page="elec" onclick="sp('elec',this)"><span class="nic">⚡</span>Vignettes Élec.<span class="nbadge" id="nb-elec">0</span></button>
+    <button class="nbtn ntele" data-page="tele" onclick="sp('tele',this)"><span class="nic">📡</span>Télécommunications<span class="nbadge" id="nb-tele">0</span></button>
+    <button class="nbtn npost" data-page="post" onclick="sp('post',this)"><span class="nic">✉️</span>Affranchissement<span class="nbadge" id="nb-post">0</span></button>
+    <button class="nbtn" data-page="vtt" onclick="sp('vtt',this)"><span class="nic">🚗</span>Vignettes VTT<span class="nbadge" id="nb-vtt">0</span></button>
+    <button class="nbtn" data-page="vta" onclick="sp('vta',this)"><span class="nic">🚙</span>Vignettes VTA<span class="nbadge" id="nb-vta">0</span></button>
+    <div class="nlbl">Référentiels</div>
+    <button class="nbtn" data-page="vehicules" onclick="sp('vehicules',this)"><span class="nic">🚗</span>Véhicules<span class="nbadge" id="nb-v">0</span></button>
+    <button class="nbtn" data-page="services" onclick="sp('services',this)"><span class="nic">🏢</span>Services<span class="nbadge" id="nb-sv">0</span></button>
+    <button class="nbtn" data-page="fournisseurs" onclick="sp('fournisseurs',this)"><span class="nic">🏭</span>Fournisseurs<span class="nbadge" id="nb-f">0</span></button>
+    <button class="nbtn" data-page="types" onclick="sp('types',this)"><span class="nic">🏷️</span>Types vignette<span class="nbadge" id="nb-t">0</span></button>
+    <div class="nlbl">Administration</div>
+    <button class="nbtn adm" data-page="utilisateurs" onclick="sp('utilisateurs',this)"><span class="nic">👥</span>Utilisateurs<span class="nbadge" id="nb-u">0</span></button>
+    <button class="nbtn adm" data-page="permissions" onclick="sp('permissions',this)"><span class="nic">🔐</span>Rôles & Accès</button>
+    <button class="nbtn" data-page="alertes" onclick="sp('alertes',this)"><span class="nic">🔔</span>Alertes stock</button>
+    <button class="nbtn adm" data-page="logs" onclick="sp('logs',this)"><span class="nic">📋</span>Journal activité</button>
+    <button class="nbtn" data-page="rapports" onclick="sp('rapports',this)"><span class="nic">📊</span>Rapports</button>
+    <div class="nlbl">Cloud</div>
+    <button class="nbtn" onclick="openSupaConfig()"><span class="nic">☁</span>Config. sync cloud</button>
+    <button class="nbtn" onclick="manualSync()"><span class="nic">🔄</span>Synchroniser</button>
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+<div class="topbar">
+  <div class="pttl" id="pttl">Dashboard</div>
+  <div style="display:flex;gap:7px;align-items:center">
+    <button class="btn btn-sm btn-g" onclick="exportData()">⬇ Export</button>
+    <label class="btn btn-sm" style="cursor:pointer;background:var(--bll);border-color:rgba(30,58,138,.2);color:var(--bl)">
+      ⬆ Import JSON<input type="file" accept=".json" style="display:none" onchange="importJSON(event)">
+    </label>
+    <div class="clock-box"><div class="clock-t" id="clk-h">--:--:--</div><div id="clk-d">--/--/----</div></div>
+    <div id="sync-pill" style="display:none;font-size:11px;padding:4px 10px;border-radius:6px;font-weight:500;font-family:var(--mono)"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="kgrid">
+    <div class="kpi"><div class="kval" style="color:var(--gn)" id="k-tot">0</div><div class="klbl">Total vignettes en stock</div><div class="ksub" id="k-tc">0 types</div><div class="ksub" id="k-tot-mont" style="margin-top:4px;font-weight:600;color:var(--gn)"></div><div class="ksub" id="k-tot-qte"></div></div>
+    <div class="kpi"><div class="kval" style="color:var(--wa)" id="k-eau">0</div><div class="klbl">Vignettes eau (stock)</div><div class="ksub" id="k-eau-mont" style="margin-top:4px;font-weight:600;color:var(--wa)"></div><div class="ksub" id="k-eau-qte"></div></div>
+    <div class="kpi"><div class="kval" style="color:var(--el)" id="k-elec">0</div><div class="klbl">Vignettes électricité (stock)</div><div class="ksub" id="k-elec-mont" style="margin-top:4px;font-weight:600;color:var(--el)"></div><div class="ksub" id="k-elec-qte"></div></div>
+    <div class="kpi"><div class="kval" style="color:var(--rd)" id="k-al">0</div><div class="klbl">Alertes actives</div><div class="ksub">Seuils dépassés</div></div>
+  </div>
+  <div class="sh"><div class="st">Stock par type de vignette</div></div>
+  <div class="sc-grid" id="dash-sc"></div>
+  <div class="dgrid">
+    <div class="card"><div class="ch"><div class="ct">Derniers mouvements</div></div>
+      <table class="dt"><thead><tr><th>Date</th><th>Type</th><th>Qté</th><th>Action</th></tr></thead><tbody id="d-mouv"></tbody></table></div>
+    <div class="card"><div class="ch"><div class="ct">Derniers paiements (frais généraux)</div></div>
+      <table class="dt"><thead><tr><th>Date</th><th>Référence</th><th>Montant</th><th>Catégorie</th></tr></thead><tbody id="d-frais"></tbody></table></div>
+  </div>
+</div>
+
+<!-- STOCK & ACHATS -->
+<div class="page" id="page-stock">
+  <div class="sh"><div class="st">Stock & Achats</div><button class="btn btn-p" onclick="om('m-achat')">+ Nouvel achat</button></div>
+  <div class="sc-grid" id="stock-sc" style="margin-bottom:18px"></div>
+  <!-- Totaux globaux achats -->
+  <div id="stock-totaux" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px"></div>
+  <div class="fc">
+    <div class="ch"><div class="ct">Historique des achats</div><div style="font-size:12px;color:var(--mu)">Stock calculé automatiquement</div></div>
+    <div class="fbar">
+      <input type="text" placeholder="Rechercher…" oninput="ft('t-achats',this.value)">
+      <select id="fa-type" onchange="ft('t-achats','','tid',this.value)"><option value="">Tous les types</option></select>
     </div>
-    <div class="fg" style="margin-bottom:16px">
-      <label class="fl">Mot de passe</label>
-      <input class="fi" type="password" id="pw" placeholder="••••••" onkeypress="if(event.key==='Enter')login()">
+    <table class="dt"><thead><tr><th>Date</th><th>Type vignette</th><th>Fournisseur</th><th>Qté</th><th>Prix unit.</th><th>Montant</th><th>N° Lot</th><th>Par</th><th>Actions</th></tr></thead>
+    <tbody id="t-achats"></tbody></table>
+  </div>
+</div>
+
+<!-- MOUVEMENTS -->
+<div class="page" id="page-mouvements">
+  <div class="sh"><div class="st">Mouvements de vignettes</div><button class="btn btn-p" onclick="om('m-mouv')">+ Enregistrer mouvement</button></div>
+  <div class="fc">
+    <div class="fbar">
+      <input type="text" placeholder="Rechercher…" oninput="ft('t-mouvements',this.value)">
+      <select onchange="ft('t-mouvements','','tm',this.value)"><option value="">Tous</option><option>Sortie</option><option>Affectation</option><option>Retour</option><option>Perte</option></select>
     </div>
-    <button class="btn btn-p" style="width:100%;justify-content:center" onclick="login()">Connexion</button>
-    <div class="dh">
-      <strong>Démo :</strong><br>
-      Admin: admin / admin<br>
-      Manager: manager / manager<br>
-      Auditor: auditor / auditor
+    <table class="dt"><thead><tr><th>Date</th><th>Action</th><th>Vignette</th><th>Qté</th><th>Véhicule</th><th>Service</th><th>Reliquat</th><th>Actions</th></tr></thead>
+    <tbody id="t-mouvements"></tbody></table>
+  </div>
+</div>
+
+<!-- EAU -->
+<div class="page" id="page-eau">
+  <div class="fh water"><div><div class="fh-title">💧 Vignettes Eau — ONEP</div><div class="fh-sub">Paiement des frais de consommation des compteurs d'eau</div></div>
+    <button class="btn" style="background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.3);color:#fff" onclick="om('m-frais-eau')">+ Enregistrer paiement</button></div>
+  <div class="fstats">
+    <div class="fstat"><div class="fstat-val" style="color:var(--wa)" id="eau-stk">0</div><div class="fstat-lbl">Vignettes disponibles</div></div>
+    <div class="fstat"><div class="fstat-val" style="color:var(--gn)" id="eau-nb">0</div><div class="fstat-lbl">Paiements enregistrés</div></div>
+    <div class="fstat"><div class="fstat-val" style="color:var(--am);font-size:14px" id="eau-mt">—</div><div class="fstat-lbl">Montant total payé</div></div>
+  </div>
+  <div class="fc">
+    <div class="fbar"><input type="text" placeholder="Rechercher compteur…" oninput="ft('t-eau',this.value)"></div>
+    <table class="dt"><thead><tr><th>Date</th><th>N° Compteur</th><th>Désignation</th><th>Vignettes</th><th>Montant (MAD)</th><th>Imputable à</th><th>Par</th><th>Actions</th></tr></thead>
+    <tbody id="t-eau"></tbody></table>
+  </div>
+</div>
+
+<!-- ELEC -->
+<div class="page" id="page-elec">
+  <div class="fh elec"><div><div class="fh-title">⚡ Vignettes Électricité — SNTL/ONEE</div><div class="fh-sub">Paiement des frais de consommation des compteurs d'électricité</div></div>
+    <button class="btn" style="background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.3);color:#fff" onclick="om('m-frais-elec')">+ Enregistrer paiement</button></div>
+  <div class="fstats">
+    <div class="fstat"><div class="fstat-val" style="color:var(--el)" id="elec-stk">0</div><div class="fstat-lbl">Vignettes disponibles</div></div>
+    <div class="fstat"><div class="fstat-val" style="color:var(--gn)" id="elec-nb">0</div><div class="fstat-lbl">Paiements enregistrés</div></div>
+    <div class="fstat"><div class="fstat-val" style="color:var(--am);font-size:14px" id="elec-mt">—</div><div class="fstat-lbl">Montant total payé</div></div>
+  </div>
+  <div class="fc">
+    <div class="fbar"><input type="text" placeholder="Rechercher compteur…" oninput="ft('t-elec',this.value)"></div>
+    <table class="dt"><thead><tr><th>Date</th><th>N° Compteur</th><th>Désignation</th><th>Vignettes</th><th>Montant (MAD)</th><th>Imputable à</th><th>Par</th><th>Actions</th></tr></thead>
+    <tbody id="t-elec"></tbody></table>
+  </div>
+</div>
+
+<!-- TELE -->
+<div class="page" id="page-tele">
+  <div class="fh tele"><div><div class="fh-title">📡 Vignettes Télécommunications</div><div class="fh-sub">Paiement des frais de télécommunication (téléphone, internet…)</div></div>
+    <button class="btn" style="background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.3);color:#fff" onclick="om('m-frais-tele')">+ Enregistrer paiement</button></div>
+  <div class="fstats">
+    <div class="fstat"><div class="fstat-val" style="color:var(--cy)" id="tele-stk">0</div><div class="fstat-lbl">Vignettes disponibles</div></div>
+    <div class="fstat"><div class="fstat-val" style="color:var(--gn)" id="tele-nb">0</div><div class="fstat-lbl">Paiements enregistrés</div></div>
+    <div class="fstat"><div class="fstat-val" style="color:var(--am);font-size:14px" id="tele-mt">—</div><div class="fstat-lbl">Montant total payé</div></div>
+  </div>
+  <div class="fc">
+    <div class="fbar"><input type="text" placeholder="Rechercher…" oninput="ft('t-tele',this.value)"></div>
+    <table class="dt"><thead><tr><th>Date</th><th>N° Abonnement / Ligne</th><th>Désignation</th><th>Vignettes</th><th>Montant (MAD)</th><th>Type abonnement</th><th>Par</th><th>Actions</th></tr></thead>
+    <tbody id="t-tele"></tbody></table>
+  </div>
+</div>
+
+<!-- AFFRANCHISSEMENT -->
+<div class="page" id="page-post">
+  <div class="fh post"><div><div class="fh-title">✉️ Vignettes Affranchissement & Timbres postaux</div><div class="fh-sub">Paiement des frais d'envoi du courrier postal</div></div>
+    <button class="btn" style="background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.3);color:#fff" onclick="om('m-frais-post')">+ Enregistrer envoi</button></div>
+  <div class="fstats">
+    <div class="fstat"><div class="fstat-val" style="color:var(--pk)" id="post-stk">0</div><div class="fstat-lbl">Vignettes disponibles</div></div>
+    <div class="fstat"><div class="fstat-val" style="color:var(--gn)" id="post-nb">0</div><div class="fstat-lbl">Envois enregistrés</div></div>
+    <div class="fstat"><div class="fstat-val" style="color:var(--am);font-size:14px" id="post-mt">—</div><div class="fstat-lbl">Montant total affranchissement</div></div>
+  </div>
+  <div class="fc">
+    <div class="fbar"><input type="text" placeholder="Rechercher…" oninput="ft('t-post',this.value)"></div>
+    <table class="dt"><thead><tr><th>Date</th><th>N° Pli / Référence</th><th>Destinataire</th><th>Type courrier</th><th>Vignettes</th><th>Montant (MAD)</th><th>Service émetteur</th><th>Par</th><th>Actions</th></tr></thead>
+    <tbody id="t-post"></tbody></table>
+  </div>
+</div>
+
+<!-- VTT -->
+<div class="page" id="page-vtt">
+  <div class="fh" style="background:linear-gradient(135deg,var(--bl),#1e40af)"><div><div class="fh-title">🚗 Vignettes VTT</div><div class="fh-sub">Gestion et suivi des vignettes de type VTT</div></div>
+    <button class="btn" style="background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.3);color:#fff" onclick="om('m-frais-vtt')">+ Enregistrer utilisation</button></div>
+  <div class="fstats">
+    <div class="fstat"><div class="fstat-val" style="color:var(--bl)" id="vtt-stk">0</div><div class="fstat-lbl">Vignettes disponibles</div></div>
+    <div class="fstat"><div class="fstat-val" style="color:var(--gn)" id="vtt-nb">0</div><div class="fstat-lbl">Utilisations enregistrées</div></div>
+    <div class="fstat"><div class="fstat-val" style="color:var(--am);font-size:14px" id="vtt-mt">—</div><div class="fstat-lbl">Montant total</div></div>
+  </div>
+  <div class="fc">
+    <div class="fbar"><input type="text" placeholder="Rechercher…" oninput="ft('t-vtt',this.value)"></div>
+    <table class="dt"><thead><tr><th>Date</th><th>Référence</th><th>Désignation</th><th>Vignettes</th><th>Montant (MAD)</th><th>Véhicule</th><th>Par</th><th>Actions</th></tr></thead>
+    <tbody id="t-vtt"></tbody></table>
+  </div>
+</div>
+
+<!-- VTA -->
+<div class="page" id="page-vta">
+  <div class="fh" style="background:linear-gradient(135deg,var(--rd),#b91c1c)"><div><div class="fh-title">🚙 Vignettes VTA</div><div class="fh-sub">Gestion et suivi des vignettes de type VTA</div></div>
+    <button class="btn" style="background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.3);color:#fff" onclick="om('m-frais-vta')">+ Enregistrer utilisation</button></div>
+  <div class="fstats">
+    <div class="fstat"><div class="fstat-val" style="color:var(--rd)" id="vta-stk">0</div><div class="fstat-lbl">Vignettes disponibles</div></div>
+    <div class="fstat"><div class="fstat-val" style="color:var(--gn)" id="vta-nb">0</div><div class="fstat-lbl">Utilisations enregistrées</div></div>
+    <div class="fstat"><div class="fstat-val" style="color:var(--am);font-size:14px" id="vta-mt">—</div><div class="fstat-lbl">Montant total</div></div>
+  </div>
+  <div class="fc">
+    <div class="fbar"><input type="text" placeholder="Rechercher…" oninput="ft('t-vta',this.value)"></div>
+    <table class="dt"><thead><tr><th>Date</th><th>Référence</th><th>Désignation</th><th>Vignettes</th><th>Montant (MAD)</th><th>Véhicule</th><th>Par</th><th>Actions</th></tr></thead>
+    <tbody id="t-vta"></tbody></table>
+  </div>
+</div>
+
+<!-- VÉHICULES -->
+<div class="page" id="page-vehicules">
+  <div class="sh">
+    <div class="st">Parc de véhicules</div>
+    <div class="sha">
+      <label class="btn btn-sm btn-e" style="cursor:pointer">📥 Import Excel<input type="file" accept=".csv,.xlsx" style="display:none" onchange="handleImport(event,'veh')"></label>
+      <button class="btn btn-p" onclick="om('m-veh')">+ Ajouter véhicule</button>
+    </div>
+  </div>
+  <div class="fc">
+    <div class="fbar"><input type="text" placeholder="Rechercher…" oninput="ft('t-veh',this.value)"></div>
+    <table class="dt"><thead><tr><th>Immatriculation</th><th>Marque / Modèle</th><th>Carburant</th><th>Mise en service</th><th>Service affecté</th><th>Actions</th></tr></thead>
+    <tbody id="t-veh"></tbody></table>
+  </div>
+</div>
+
+<!-- SERVICES -->
+<div class="page" id="page-services">
+  <div class="sh">
+    <div class="st">Services</div>
+    <div class="sha">
+      <label class="btn btn-sm btn-e" style="cursor:pointer">📥 Import Excel<input type="file" accept=".csv,.xlsx" style="display:none" onchange="handleImport(event,'svc')"></label>
+      <button class="btn btn-sm btn-g" onclick="dlTemplate('svc')">⬇ Modèle CSV</button>
+      <button class="btn btn-p" onclick="om('m-svc')">+ Ajouter service</button>
+    </div>
+  </div>
+  <div class="fc"><table class="dt"><thead><tr><th>Nom du service</th><th>Gérant</th><th>Téléphone</th><th>Description</th><th>Véhicules</th><th>Actions</th></tr></thead><tbody id="t-svc"></tbody></table></div>
+</div>
+
+<!-- FOURNISSEURS -->
+<div class="page" id="page-fournisseurs">
+  <div class="sh">
+    <div class="st">Fournisseurs</div>
+    <div class="sha">
+      <label class="btn btn-sm btn-e" style="cursor:pointer">📥 Import Excel<input type="file" accept=".csv,.xlsx" style="display:none" onchange="handleImport(event,'four')"></label>
+      <button class="btn btn-p" onclick="om('m-four')">+ Ajouter fournisseur</button>
+    </div>
+  </div>
+  <div class="fc"><table class="dt"><thead><tr><th>Nom</th><th>Contact</th><th>Téléphone</th><th>Email</th><th>Actions</th></tr></thead><tbody id="t-four"></tbody></table></div>
+</div>
+
+<!-- TYPES -->
+<div class="page" id="page-types">
+  <div class="sh"><div class="st">Types de vignettes</div><button class="btn btn-p" onclick="om('m-type')">+ Ajouter type</button></div>
+  <div class="fc"><table class="dt"><thead><tr><th>Nom</th><th>Catégorie</th><th>Description</th><th>Stock actuel</th><th>Actions</th></tr></thead><tbody id="t-types"></tbody></table></div>
+</div>
+
+<!-- UTILISATEURS -->
+<div class="page" id="page-utilisateurs">
+  <div class="sh"><div class="st">Gestion des utilisateurs</div><button class="btn btn-p" onclick="om('m-user')">+ Ajouter utilisateur</button></div>
+  <div class="fc"><table class="dt"><thead><tr><th>Nom complet</th><th>Identifiant</th><th>Rôle</th><th>Statut</th><th>Dernier accès</th><th>Actions</th></tr></thead><tbody id="t-users"></tbody></table></div>
+</div>
+
+<!-- ALERTES -->
+<div class="page" id="page-alertes">
+  <div class="sh"><div class="st">Alertes de stock</div><button class="btn btn-p" onclick="om('m-alerte')">+ Configurer alerte</button></div>
+  <div class="fc"><table class="dt"><thead><tr><th>Type vignette</th><th>Seuil</th><th>Stock actuel</th><th>Statut</th><th>Déclenchée le</th><th>Actions</th></tr></thead><tbody id="t-alertes"></tbody></table></div>
+</div>
+
+<!-- LOGS -->
+<div class="page" id="page-logs">
+  <div class="sh"><div class="st">Journal d'activité</div><button class="btn btn-sm btn-g" onclick="clearLogs()">🗑 Vider</button></div>
+  <div class="fc">
+    <div class="fbar"><input type="text" placeholder="Rechercher…" oninput="ft('t-logs',this.value)"></div>
+    <table class="dt"><thead><tr><th>Date / Heure</th><th>Utilisateur</th><th>Action</th><th>Détails</th></tr></thead><tbody id="t-logs"></tbody></table>
+  </div>
+</div>
+<!-- RAPPORTS -->
+<div class="page" id="page-rapports">
+  <div class="sh"><div class="st">Rapports & Exports</div></div>
+  <!-- Filtres globaux -->
+  <div class="fc" style="margin-bottom:16px">
+    <div class="ch"><div class="ct">Paramètres du rapport</div></div>
+    <div style="padding:14px 16px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+      <div class="fg" style="margin:0;min-width:160px"><label class="fl">Période</label>
+        <select class="fs" id="rp-per" onchange="rdRapports()">
+          <option value="all">Toutes les dates</option>
+          <option value="month">Ce mois</option>
+          <option value="3m">3 derniers mois</option>
+          <option value="year">Cette année</option>
+        </select>
+      </div>
+      <div class="fg" style="margin:0;min-width:160px"><label class="fl">Type vignette</label>
+        <select class="fs" id="rp-type" onchange="rdRapports()"><option value="">Tous</option></select>
+      </div>
+      <div class="fg" style="margin:0;min-width:160px"><label class="fl">Catégorie</label>
+        <select class="fs" id="rp-cat" onchange="rdRapports()">
+          <option value="">Toutes</option>
+          <option value="other">Entretien/Répar.</option>
+          <option value="fuel">Carburant</option>
+          <option value="water">Eau</option>
+          <option value="elec">Électricité</option>
+          <option value="tele">Télécom</option>
+          <option value="post">Affranchissement</option>
+          <option value="vtt">VTT</option>
+          <option value="vta">VTA</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <!-- Blocs de rapport -->
+  <div style="display:flex;flex-direction:column;gap:18px">
+    <!-- Stock & Achats -->
+    <div class="fc">
+      <div class="ch">
+        <div class="ct">📦 Stock & Achats par type de vignette</div>
+        <div class="acts">
+          <button class="btn btn-sm btn-e" onclick="exportRapportXLSX('achats')">⬇ Excel</button>
+          <button class="btn btn-sm" style="background:var(--rdl);border-color:rgba(196,70,10,.2);color:var(--rd)" onclick="exportRapportPDF('achats')">⬇ PDF</button>
+        </div>
+      </div>
+      <table class="dt" id="rp-t-achats"><thead><tr><th>Type vignette</th><th>Catégorie</th><th>Qté achetée</th><th>Montant total (MAD)</th><th>Stock actuel</th></tr></thead><tbody id="rp-b-achats"></tbody></table>
+    </div>
+    <!-- Mouvements -->
+    <div class="fc">
+      <div class="ch">
+        <div class="ct">🔄 Mouvements</div>
+        <div class="acts">
+          <button class="btn btn-sm btn-e" onclick="exportRapportXLSX('mouvements')">⬇ Excel</button>
+          <button class="btn btn-sm" style="background:var(--rdl);border-color:rgba(196,70,10,.2);color:var(--rd)" onclick="exportRapportPDF('mouvements')">⬇ PDF</button>
+        </div>
+      </div>
+      <table class="dt" id="rp-t-mouvements"><thead><tr><th>Date</th><th>Type</th><th>Vignette</th><th>Qté</th><th>Véhicule</th><th>Montant (MAD)</th><th>Reliquat</th></tr></thead><tbody id="rp-b-mouvements"></tbody></table>
+    </div>
+    <!-- Frais généraux -->
+    <div class="fc">
+      <div class="ch">
+        <div class="ct">💰 Frais généraux (eau, élec, télécom, affranchissement, VTT, VTA)</div>
+        <div class="acts">
+          <button class="btn btn-sm btn-e" onclick="exportRapportXLSX('frais')">⬇ Excel</button>
+          <button class="btn btn-sm" style="background:var(--rdl);border-color:rgba(196,70,10,.2);color:var(--rd)" onclick="exportRapportPDF('frais')">⬇ PDF</button>
+        </div>
+      </div>
+      <table class="dt" id="rp-t-frais"><thead><tr><th>Date</th><th>Catégorie</th><th>Référence</th><th>Désignation</th><th>Vignettes</th><th>Montant (MAD)</th></tr></thead><tbody id="rp-b-frais"></tbody></table>
+    </div>
+    <!-- Journal -->
+    <div class="fc">
+      <div class="ch">
+        <div class="ct">📋 Journal d'activité</div>
+        <div class="acts">
+          <button class="btn btn-sm btn-e" onclick="exportRapportXLSX('logs')">⬇ Excel</button>
+          <button class="btn btn-sm" style="background:var(--rdl);border-color:rgba(196,70,10,.2);color:var(--rd)" onclick="exportRapportPDF('logs')">⬇ PDF</button>
+        </div>
+      </div>
+      <table class="dt" id="rp-t-logs"><thead><tr><th>Date / Heure</th><th>Utilisateur</th><th>Action</th><th>Détails</th></tr></thead><tbody id="rp-b-logs"></tbody></table>
     </div>
   </div>
 </div>
 
-<!-- APP CONTAINER -->
-<div id="app">
-  <div class="al">
-    <!-- SIDEBAR -->
-    <div class="sidebar">
-      <div class="slogo">
-        <div class="slogon">🎫 VignetteManager</div>
-        <div class="slogos">v2.0 Pro</div>
-      </div>
-      <div class="upill">
-        <div class="uav" id="uav"></div>
-        <div class="uinfo">
-          <div class="uname" id="uname"></div>
-          <div class="urole" id="urole"></div>
-        </div>
-        <button class="lout" onclick="logout()" title="Déconnexion">⏻</button>
-      </div>
-      <div class="nav">
-        <div class="nlbl">Navigation</div>
-        <button class="nbtn active" onclick="nav('dashboard')"><span class="nic">📊</span>Tableau de bord</button>
-        <button class="nbtn" onclick="nav('stock')"><span class="nic">📦</span>Stock</button>
-        <button class="nbtn" onclick="nav('mouvements')"><span class="nic">↔️</span>Mouvements</button>
-        <button class="nbtn" onclick="nav('frais')"><span class="nic">💰</span>Frais</button>
-        <button class="nbtn" onclick="nav('export')" id="nav-export"><span class="nic">📥</span>Export & Rapports</button>
-        <button class="nbtn" onclick="nav('utilisateurs')" id="nav-users"><span class="nic">👥</span>Utilisateurs</button>
-        <button class="nbtn" onclick="nav('roles')" id="nav-roles"><span class="nic">🔐</span>Gestion Rôles</button>
-        <button class="nbtn" onclick="nav('config')" id="nav-config"><span class="nic">⚙️</span>Configuration</button>
-      </div>
-    </div>
-
-    <!-- MAIN CONTENT -->
-    <div style="flex:1;display:flex;flex-direction:column">
-      <!-- TOPBAR -->
-      <div class="topbar">
-        <div class="pttl" id="ptitle">Tableau de bord</div>
-        <div class="clock-box">
-          <div class="clock-t" id="clock"></div>
-          <div style="font-size:10px;color:var(--mu)">Aujourd'hui</div>
-        </div>
-      </div>
-
-      <!-- PAGES -->
-      <div class="main">
-        <!-- DASHBOARD PAGE -->
-        <div class="page active" id="p-dashboard">
-          <div class="sh">
-            <div class="st">Tableau de bord</div>
-          </div>
-          <div class="kgrid" id="kgrid"></div>
-          <div class="card">
-            <div class="ch"><div class="ct">Derniers mouvements</div></div>
-            <table class="dt" id="t-recent"></table>
-          </div>
-        </div>
-
-        <!-- STOCK PAGE -->
-        <div class="page" id="p-stock">
-          <div class="sh">
-            <div class="st">Gestion du Stock</div>
-            <div class="sha"><button class="btn btn-p" onclick="om('m-type')">+ Ajouter type</button></div>
-          </div>
-          <div class="card">
-            <div class="fbar">
-              <input type="text" placeholder="Rechercher..." id="search-stock" onkeyup="filterTable('search-stock','t-stock')">
-            </div>
-            <table class="dt" id="t-stock"></table>
-          </div>
-        </div>
-
-        <!-- MOUVEMENTS PAGE -->
-        <div class="page" id="p-mouvements">
-          <div class="sh">
-            <div class="st">Mouvements</div>
-            <div class="sha"><button class="btn btn-p" onclick="om('m-mouv')">+ Nouveau mouvement</button></div>
-          </div>
-          <div class="card">
-            <div class="fbar">
-              <input type="text" placeholder="Rechercher..." id="search-mouv" onkeyup="filterTable('search-mouv','t-mouv')">
-              <select id="filter-mouv" onchange="filterByType('t-mouv',this.value)"><option value="">Tous les types</option></select>
-            </div>
-            <table class="dt" id="t-mouv"></table>
-          </div>
-        </div>
-
-        <!-- FRAIS PAGE -->
-        <div class="page" id="p-frais">
-          <div class="sh">
-            <div class="st">Frais & Paiements</div>
-          </div>
-          <div class="card">
-            <div class="fbar">
-              <input type="text" placeholder="Rechercher..." id="search-frais" onkeyup="filterTable('search-frais','t-frais')">
-              <select id="filter-frais" onchange="filterByCategory('t-frais',this.value)">
-                <option value="">Toutes catégories</option>
-                <option value="eau">Eau</option>
-                <option value="elec">Électricité</option>
-                <option value="tele">Télécommunications</option>
-                <option value="post">Affranchissement</option>
-              </select>
-            </div>
-            <table class="dt" id="t-frais"></table>
-          </div>
-        </div>
-
-        <!-- EXPORT & RAPPORTS PAGE -->
-        <div class="page" id="p-export">
-          <div class="sh">
-            <div class="st">Export & Rapports</div>
-            <div class="sha"><span style="font-size:11px;color:var(--mu)">Contrôles Internes</span></div>
-          </div>
-
-          <!-- EXPORT SECTION -->
-          <div class="export-section">
-            <div class="export-title">📊 Exporter les données</div>
-            <div class="export-options">
-              <button class="export-btn" onclick="exportToExcel('stock')">📈 Stock (Excel)</button>
-              <button class="export-btn" onclick="exportToExcel('mouvements')">📈 Mouvements (Excel)</button>
-              <button class="export-btn" onclick="exportToExcel('frais')">📈 Frais (Excel)</button>
-              <button class="export-btn" onclick="exportToPDF('stock')">📄 Stock (PDF)</button>
-              <button class="export-btn" onclick="exportToPDF('mouvements')">📄 Mouvements (PDF)</button>
-              <button class="export-btn" onclick="exportToPDF('frais')">📄 Frais (PDF)</button>
-            </div>
-          </div>
-
-          <!-- RAPPORT SECTION -->
-          <div class="export-section">
-            <div class="export-title">📋 Rapports de Contrôle</div>
-            <div class="export-options">
-              <button class="export-btn" onclick="generateControlReport('excel')">📋 Rapport Complet (Excel)</button>
-              <button class="export-btn" onclick="generateControlReport('pdf')">📋 Rapport Complet (PDF)</button>
-              <button class="export-btn" onclick="generateAuditTrail('excel')">🔍 Audit Trail (Excel)</button>
-              <button class="export-btn" onclick="generateAuditTrail('pdf')">🔍 Audit Trail (PDF)</button>
-            </div>
-          </div>
-
-          <!-- RAPPORT PREVIEW -->
-          <div class="card">
-            <div class="ch"><div class="ct">Aperçu du rapport</div></div>
-            <div id="report-preview" style="padding:16px;font-size:12px;color:var(--mu)">Sélectionnez un rapport à générer</div>
-          </div>
-        </div>
-
-        <!-- UTILISATEURS PAGE -->
-        <div class="page" id="p-utilisateurs">
-          <div class="sh">
-            <div class="st">Gestion des Utilisateurs</div>
-            <div class="sha"><button class="btn btn-p" onclick="om('m-user')">+ Ajouter utilisateur</button></div>
-          </div>
-          <div class="card">
-            <div class="fbar">
-              <input type="text" placeholder="Rechercher..." id="search-users" onkeyup="filterTable('search-users','t-users')">
-            </div>
-            <table class="dt" id="t-users"></table>
-          </div>
-        </div>
-
-        <!-- ROLES PAGE -->
-        <div class="page" id="p-roles">
-          <div class="sh">
-            <div class="st">Gestion des Rôles & Permissions</div>
-          </div>
-          <div class="rbac-grid" id="rbac-grid"></div>
-          <div class="card">
-            <div class="ch"><div class="ct">Permissions par rôle</div></div>
-            <div id="rbac-details" style="padding:16px"></div>
-          </div>
-        </div>
-
-        <!-- CONFIG PAGE -->
-        <div class="page" id="p-config">
-          <div class="sh">
-            <div class="st">Configuration</div>
-          </div>
-          <div class="card">
-            <div class="ch"><div class="ct">Paramètres système</div></div>
-            <div style="padding:16px">
-              <div class="fg" style="margin-bottom:12px">
-                <label class="fl">Nom de l'organisation</label>
-                <input class="fi" type="text" id="org-name" value="VIRCEL">
-              </div>
-              <button class="btn btn-p" onclick="saveConfig()">Enregistrer</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+<!-- PERMISSIONS -->
+<div class="page" id="page-permissions">
+  <div class="sh"><div class="st">Rôles & Accès</div><div style="font-size:12px;color:var(--mu)">Cochez les pages accessibles pour chaque rôle</div></div>
+  <div id="perm-grid" style="display:flex;flex-direction:column;gap:16px"></div>
+  <div style="margin-top:16px;display:flex;justify-content:flex-end">
+    <button class="btn btn-p" onclick="savePerms()">💾 Enregistrer les permissions</button>
   </div>
 </div>
 
-<!-- MODALS -->
+</div></div></div>
 
-<!-- Modal Type de Vignette -->
-<div class="ov" id="m-type"><div class="modal">
-  <div class="mh"><div class="mt">Ajouter un type de vignette</div><button class="xb" onclick="cm('m-type')">×</button></div>
+<!-- ══════════════════════════════ MODALS ══════════════════════════════ -->
+
+<!-- Achat -->
+<div class="ov" id="m-achat"><div class="modal">
+  <div class="mh"><div class="mt" id="mt-achat">Nouvel achat — Entrée en stock</div><button class="xb" onclick="cm('m-achat')">×</button></div>
   <div class="mb">
-    <div class="fg"><label class="fl">Nom *</label><input class="fi" type="text" id="tp-nom" placeholder="Vignette Eau"></div>
-    <div class="fg"><label class="fl">Catégorie</label><select class="fs" id="tp-cat"><option value="other">Autre</option><option value="water">Eau</option><option value="elec">Électricité</option></select></div>
+    <input type="hidden" id="a-eid">
+    <div class="fr"><div class="fg"><label class="fl">Date *</label><input class="fi" type="date" id="a-date"></div><div class="fg"><label class="fl">Type vignette *</label><select class="fs" id="a-type"></select></div></div>
+    <div class="fr"><div class="fg"><label class="fl">Fournisseur *</label><select class="fs" id="a-four"></select></div><div class="fg"><label class="fl">N° Lot / Série</label><input class="fi" type="text" id="a-lot" placeholder="LOT-2024-001"></div></div>
+    <div class="fr"><div class="fg"><label class="fl">Quantité *</label><input class="fi" type="number" id="a-qte" min="1" placeholder="0" oninput="calcAchat()"></div><div class="fg"><label class="fl">Prix unitaire (MAD)</label><input class="fi" type="number" id="a-prix" step="0.01" placeholder="0.00" oninput="calcAchat()"></div></div>
+    <div class="fg"><label class="fl">Montant total (MAD) — calculé automatiquement</label><input class="fi" type="number" id="a-mont" step="0.01" placeholder="0.00" readonly style="background:var(--sf2)"></div>
   </div>
-  <div class="mf"><button class="btn" onclick="cm('m-type')">Annuler</button><button class="btn btn-p" onclick="saveType()">Enregistrer</button></div>
+  <div class="mf"><button class="btn" onclick="cm('m-achat')">Annuler</button><button class="btn btn-p" onclick="saveAchat()">Enregistrer</button></div>
 </div></div>
 
-<!-- Modal Utilisateur -->
-<div class="ov" id="m-user"><div class="modal">
-  <div class="mh"><div class="mt">Ajouter un utilisateur</div><button class="xb" onclick="cm('m-user')">×</button></div>
-  <div class="mb">
-    <div class="fg"><label class="fl">Nom *</label><input class="fi" type="text" id="u-nc" placeholder="Jean Dupont"></div>
-    <div class="fg"><label class="fl">Identifiant *</label><input class="fi" type="text" id="u-lg" placeholder="jdupont"></div>
-    <div class="fg"><label class="fl">Mot de passe *</label><input class="fi" type="password" id="u-pw" placeholder="••••••"></div>
-    <div class="fg"><label class="fl">Rôle *</label><select class="fs" id="u-rl">
-      <option value="agent">Agent</option>
-      <option value="manager">Manager</option>
-      <option value="auditor">Auditeur</option>
-      <option value="admin">Administrateur</option>
-    </select></div>
-  </div>
-  <div class="mf"><button class="btn" onclick="cm('m-user')">Annuler</button><button class="btn btn-p" onclick="saveUser()">Enregistrer</button></div>
-</div></div>
-
-<!-- Modal Mouvement -->
+<!-- Mouvement -->
 <div class="ov" id="m-mouv"><div class="modal">
-  <div class="mh"><div class="mt">Nouveau mouvement</div><button class="xb" onclick="cm('m-mouv')">×</button></div>
+  <div class="mh"><div class="mt" id="mt-mouv">Enregistrer un mouvement</div><button class="xb" onclick="cm('m-mouv')">×</button></div>
   <div class="mb">
-    <div class="fr"><div class="fg"><label class="fl">Date *</label><input class="fi" type="date" id="mv-date"></div><div class="fg"><label class="fl">Type *</label><select class="fs" id="mv-type"></select></div></div>
-    <div class="fr"><div class="fg"><label class="fl">Quantité *</label><input class="fi" type="number" id="mv-qte" min="1"></div><div class="fg"><label class="fl">Montant</label><input class="fi" type="number" id="mv-mont" step="0.01"></div></div>
-    <div class="fg"><label class="fl">Justification</label><textarea class="fi" id="mv-just" placeholder="Motif du mouvement" style="min-height:60px"></textarea></div>
+    <input type="hidden" id="mv-eid">
+    <div class="fr"><div class="fg"><label class="fl">Date *</label><input class="fi" type="date" id="mv-date"></div><div class="fg"><label class="fl">Type mouvement *</label><select class="fs" id="mv-tm"><option>Sortie</option><option>Affectation</option><option>Retour</option><option>Perte</option></select></div></div>
+    <div class="fr"><div class="fg"><label class="fl">Type vignette *</label><select class="fs" id="mv-type" onchange="calcMouv();adaptMouvForm()"></select></div><div class="fg"><label class="fl">Quantité *</label><input class="fi" type="number" id="mv-qte" min="1" placeholder="1" oninput="calcMouv()"></div></div>
+    <!-- Champs dynamiques selon catégorie -->
+    <div id="mv-fields-veh" class="fr" style="display:none"><div class="fg"><label class="fl">Véhicule</label><select class="fs" id="mv-veh" onchange="autoSvc()"></select></div><div class="fg"><label class="fl">Service affecté</label><select class="fs" id="mv-svc"></select></div></div>
+    <div id="mv-fields-svc" style="display:none"><div class="fg"><label class="fl">Service bénéficiaire</label><select class="fs" id="mv-svc2"></select></div></div>
+    <div id="mv-fields-ref" style="display:none"><div class="fg"><label class="fl">Référence / Désignation</label><input class="fi" type="text" id="mv-ref" placeholder="N° compteur, ligne, référence…"></div></div>
+    <div class="fg"><label class="fl">Justificatif</label><input class="fi" type="text" id="mv-just" placeholder="Référence…"></div>
+    <div class="fg"><label class="fl" style="display:flex;justify-content:space-between"><span>Montant utilisé (MAD)</span><span id="mv-hint" style="font-size:10px;color:var(--gn);display:none">● calculé depuis dernier achat</span></label>
+    <input class="fi" type="number" id="mv-mont" step="0.01" placeholder="0.00"></div>
+    <div id="mv-detail" style="display:none;background:var(--gnl);border:1px solid rgba(26,92,46,.2);border-radius:6px;padding:7px 11px;font-size:12px;color:var(--gn);margin-top:-6px"></div>
   </div>
   <div class="mf"><button class="btn" onclick="cm('m-mouv')">Annuler</button><button class="btn btn-p" onclick="saveMouv()">Enregistrer</button></div>
 </div></div>
 
+<!-- Paiement Eau -->
+<div class="ov" id="m-frais-eau"><div class="modal wide">
+  <div class="mh"><div class="mt">💧 Paiement compteur d'eau — ONEP</div><button class="xb" onclick="cm('m-frais-eau')">×</button></div>
+  <div class="mb">
+    <input type="hidden" id="pe-eid">
+    <div style="background:var(--wal);border:1px solid rgba(3,105,161,.2);border-radius:6px;padding:9px 12px;font-size:12px;color:var(--wa);margin-bottom:12px">Les vignettes eau seront déduites automatiquement du stock.</div>
+    <div class="fr"><div class="fg"><label class="fl">Date *</label><input class="fi" type="date" id="pe-date"></div><div class="fg"><label class="fl">N° Compteur *</label><input class="fi" type="text" id="pe-num" placeholder="ONEP-001"></div></div>
+    <div class="fg"><label class="fl">Désignation / Adresse</label><input class="fi" type="text" id="pe-des" placeholder="Bâtiment principal…"></div>
+    <div class="fr"><div class="fg"><label class="fl">Vignettes utilisées *</label><input class="fi" type="number" id="pe-qte" min="1" placeholder="1" oninput="showStock('water','pe-stk-info',this.value)"></div><div class="fg"><label class="fl">Montant payé (MAD) *</label><input class="fi" type="number" id="pe-mont" step="0.01" placeholder="0.00"></div></div>
+    <div class="fg"><label class="fl">Imputable à</label><select class="fs" id="pe-svc"><option value="">Administration générale</option></select></div>
+    <div style="font-size:11px;color:var(--mu);margin-top:-6px;margin-bottom:8px">Ces frais sont des frais généraux de consommation de l'administration.</div>
+    <div id="pe-stk-info" style="font-size:12px;color:var(--mu);margin-top:2px"></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="cm('m-frais-eau')">Annuler</button><button class="btn btn-wa" onclick="saveFrais('eau')">Enregistrer le paiement</button></div>
+</div></div>
+
+<!-- Paiement Elec -->
+<div class="ov" id="m-frais-elec"><div class="modal wide">
+  <div class="mh"><div class="mt">⚡ Paiement compteur électricité — SNTL/ONEE</div><button class="xb" onclick="cm('m-frais-elec')">×</button></div>
+  <div class="mb">
+    <input type="hidden" id="el-eid">
+    <div style="background:var(--ell);border:1px solid rgba(124,58,237,.2);border-radius:6px;padding:9px 12px;font-size:12px;color:var(--el);margin-bottom:12px">Les vignettes électricité seront déduites automatiquement du stock.</div>
+    <div class="fr"><div class="fg"><label class="fl">Date *</label><input class="fi" type="date" id="el-date"></div><div class="fg"><label class="fl">N° Compteur *</label><input class="fi" type="text" id="el-num" placeholder="SNTL-001"></div></div>
+    <div class="fg"><label class="fl">Désignation / Adresse</label><input class="fi" type="text" id="el-des" placeholder="Bâtiment principal…"></div>
+    <div class="fr"><div class="fg"><label class="fl">Vignettes utilisées *</label><input class="fi" type="number" id="el-qte" min="1" placeholder="1" oninput="showStock('elec','el-stk-info',this.value)"></div><div class="fg"><label class="fl">Montant payé (MAD) *</label><input class="fi" type="number" id="el-mont" step="0.01" placeholder="0.00"></div></div>
+    <div class="fg"><label class="fl">Imputable à</label><select class="fs" id="el-svc"><option value="">Administration générale</option></select></div>
+    <div style="font-size:11px;color:var(--mu);margin-top:-6px;margin-bottom:8px">Ces frais sont des frais généraux de consommation électrique de l'administration.</div>
+    <div id="el-stk-info" style="font-size:12px;color:var(--mu);margin-top:2px"></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="cm('m-frais-elec')">Annuler</button><button class="btn btn-el" onclick="saveFrais('elec')">Enregistrer le paiement</button></div>
+</div></div>
+
+<!-- Paiement Tele -->
+<div class="ov" id="m-frais-tele"><div class="modal wide">
+  <div class="mh"><div class="mt">📡 Paiement Télécommunications</div><button class="xb" onclick="cm('m-frais-tele')">×</button></div>
+  <div class="mb">
+    <input type="hidden" id="te-eid">
+    <div class="fr"><div class="fg"><label class="fl">Date *</label><input class="fi" type="date" id="te-date"></div><div class="fg"><label class="fl">N° Abonnement / Ligne *</label><input class="fi" type="text" id="te-num" placeholder="0537-001"></div></div>
+    <div class="fg"><label class="fl">Désignation</label><input class="fi" type="text" id="te-des" placeholder="Ligne fixe direction…"></div>
+    <div class="fr"><div class="fg"><label class="fl">Vignettes utilisées *</label><input class="fi" type="number" id="te-qte" min="1" placeholder="1" oninput="showStock('tele','te-stk-info',this.value)"></div><div class="fg"><label class="fl">Montant payé (MAD) *</label><input class="fi" type="number" id="te-mont" step="0.01" placeholder="0.00"></div></div>
+    <div class="fg"><label class="fl">Type d'abonnement</label>
+      <select class="fs" id="te-svc">
+        <option value="">-- Sélectionner --</option>
+        <option value="internet">Abonnement Internet</option>
+        <option value="fixe">Téléphone fixe</option>
+        <option value="mobile">Téléphone mobile</option>
+        <option value="mixte">Internet + Téléphone</option>
+        <option value="autre">Autre</option>
+      </select>
+    </div>
+    <div style="font-size:11px;color:var(--mu);margin-top:-6px;margin-bottom:8px">Frais d'abonnement internet, téléphone fixe ou téléphone mobile de l'administration.</div>
+    <div id="te-stk-info" style="font-size:12px;color:var(--mu);margin-top:2px"></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="cm('m-frais-tele')">Annuler</button><button class="btn btn-te" onclick="saveFrais('tele')">Enregistrer le paiement</button></div>
+</div></div>
+
+<!-- Paiement Affranchissement -->
+<div class="ov" id="m-frais-post"><div class="modal wide">
+  <div class="mh"><div class="mt">✉️ Affranchissement / Timbre postal</div><button class="xb" onclick="cm('m-frais-post')">×</button></div>
+  <div class="mb">
+    <input type="hidden" id="po-eid">
+    <div class="fr"><div class="fg"><label class="fl">Date *</label><input class="fi" type="date" id="po-date"></div><div class="fg"><label class="fl">N° Pli / Référence *</label><input class="fi" type="text" id="po-num" placeholder="PLI-2024-001"></div></div>
+    <div class="fr"><div class="fg"><label class="fl">Destinataire *</label><input class="fi" type="text" id="po-dest" placeholder="Ministère de…"></div><div class="fg"><label class="fl">Type courrier</label><select class="fs" id="po-tcourrier"><option>Lettre ordinaire</option><option>Lettre recommandée</option><option>Colis postal</option><option>Envoi express</option><option>Télégramme</option><option>Autre</option></select></div></div>
+    <div class="fr"><div class="fg"><label class="fl">Vignettes / timbres utilisés *</label><input class="fi" type="number" id="po-qte" min="1" placeholder="1" oninput="showStock('post','po-stk-info',this.value)"></div><div class="fg"><label class="fl">Montant affranchissement (MAD) *</label><input class="fi" type="number" id="po-mont" step="0.01" placeholder="0.00"></div></div>
+    <div class="fg"><label class="fl">Service émetteur du courrier</label>
+      <select class="fs" id="po-svc">
+        <option value="">Administration générale</option>
+      </select>
+    </div>
+    <div style="font-size:11px;color:var(--mu);margin-top:-6px;margin-bottom:8px">Frais d'envoi de courrier postal de l'administration générale vers les destinataires externes.</div>
+    <div id="po-stk-info" style="font-size:12px;color:var(--mu);margin-top:2px"></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="cm('m-frais-post')">Annuler</button><button class="btn btn-po" onclick="saveFrais('post')">Enregistrer l'envoi</button></div>
+</div></div>
+
+<!-- Paiement VTT -->
+<div class="ov" id="m-frais-vtt"><div class="modal wide">
+  <div class="mh"><div class="mt">🚗 Enregistrer utilisation — Vignette VTT</div><button class="xb" onclick="cm('m-frais-vtt')">×</button></div>
+  <div class="mb">
+    <input type="hidden" id="vt-eid">
+    <div class="fr"><div class="fg"><label class="fl">Date *</label><input class="fi" type="date" id="vt-date"></div><div class="fg"><label class="fl">Référence *</label><input class="fi" type="text" id="vt-num" placeholder="VTT-2024-001"></div></div>
+    <div class="fg"><label class="fl">Désignation / Motif</label><input class="fi" type="text" id="vt-des" placeholder="Mission, entretien…"></div>
+    <div class="fr"><div class="fg"><label class="fl">Vignettes utilisées *</label><input class="fi" type="number" id="vt-qte" min="1" placeholder="1" oninput="showStock('vtt','vt-stk-info',this.value)"></div><div class="fg"><label class="fl">Montant (MAD) *</label><input class="fi" type="number" id="vt-mont" step="0.01" placeholder="0.00"></div></div>
+    <div class="fg"><label class="fl">Véhicule concerné</label><select class="fs" id="vt-veh"></select></div>
+    <div id="vt-stk-info" style="font-size:12px;color:var(--mu);margin-top:2px"></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="cm('m-frais-vtt')">Annuler</button><button class="btn btn-p" onclick="saveFrais('vtt')">Enregistrer</button></div>
+</div></div>
+
+<!-- Paiement VTA -->
+<div class="ov" id="m-frais-vta"><div class="modal wide">
+  <div class="mh"><div class="mt">🚙 Enregistrer utilisation — Vignette VTA</div><button class="xb" onclick="cm('m-frais-vta')">×</button></div>
+  <div class="mb">
+    <input type="hidden" id="va-eid">
+    <div class="fr"><div class="fg"><label class="fl">Date *</label><input class="fi" type="date" id="va-date"></div><div class="fg"><label class="fl">Référence *</label><input class="fi" type="text" id="va-num" placeholder="VTA-2024-001"></div></div>
+    <div class="fg"><label class="fl">Désignation / Motif</label><input class="fi" type="text" id="va-des" placeholder="Mission, entretien…"></div>
+    <div class="fr"><div class="fg"><label class="fl">Vignettes utilisées *</label><input class="fi" type="number" id="va-qte" min="1" placeholder="1" oninput="showStock('vta','va-stk-info',this.value)"></div><div class="fg"><label class="fl">Montant (MAD) *</label><input class="fi" type="number" id="va-mont" step="0.01" placeholder="0.00"></div></div>
+    <div class="fg"><label class="fl">Véhicule concerné</label><select class="fs" id="va-veh"></select></div>
+    <div id="va-stk-info" style="font-size:12px;color:var(--mu);margin-top:2px"></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="cm('m-frais-vta')">Annuler</button><button class="btn btn-p" onclick="saveFrais('vta')">Enregistrer</button></div>
+</div></div>
+
+<!-- Véhicule -->
+<div class="ov" id="m-veh"><div class="modal">
+  <div class="mh"><div class="mt" id="mt-veh">Ajouter un véhicule</div><button class="xb" onclick="cm('m-veh')">×</button></div>
+  <div class="mb">
+    <input type="hidden" id="v-eid">
+    <div class="fr"><div class="fg"><label class="fl">Immatriculation *</label><input class="fi" type="text" id="v-immat" placeholder="A-12345-B"></div><div class="fg"><label class="fl">Marque</label><input class="fi" type="text" id="v-marque" placeholder="Peugeot"></div></div>
+    <div class="fr"><div class="fg"><label class="fl">Modèle</label><input class="fi" type="text" id="v-modele" placeholder="208"></div><div class="fg"><label class="fl">Carburant</label><select class="fs" id="v-carb"><option value="">--</option><option>Essence</option><option>Diesel</option><option>Hybride</option><option>Électrique</option><option>GPL</option></select></div></div>
+    <div class="fr"><div class="fg"><label class="fl">Date mise en service</label><input class="fi" type="date" id="v-dmis"></div><div class="fg"><label class="fl">Service affecté</label><select class="fs" id="v-svc"></select></div></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="cm('m-veh')">Annuler</button><button class="btn btn-p" onclick="saveVeh()">Enregistrer</button></div>
+</div></div>
+
+<!-- Service -->
+<div class="ov" id="m-svc"><div class="modal">
+  <div class="mh"><div class="mt" id="mt-svc">Ajouter un service</div><button class="xb" onclick="cm('m-svc')">×</button></div>
+  <div class="mb">
+    <input type="hidden" id="sv-eid">
+    <div class="fg"><label class="fl">Nom du service *</label><input class="fi" type="text" id="sv-nom" placeholder="Direction Régionale…"></div>
+    <div class="fr"><div class="fg"><label class="fl">Nom du gérant</label><input class="fi" type="text" id="sv-gerant" placeholder="Mohamed Alami"></div><div class="fg"><label class="fl">Téléphone gérant</label><input class="fi" type="tel" id="sv-tel" placeholder="+212 6…"></div></div>
+    <div class="fg"><label class="fl">Description</label><textarea class="fta" id="sv-desc"></textarea></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="cm('m-svc')">Annuler</button><button class="btn btn-p" onclick="saveSvc()">Enregistrer</button></div>
+</div></div>
+
+<!-- Fournisseur -->
+<div class="ov" id="m-four"><div class="modal">
+  <div class="mh"><div class="mt" id="mt-four">Ajouter un fournisseur</div><button class="xb" onclick="cm('m-four')">×</button></div>
+  <div class="mb">
+    <input type="hidden" id="f-eid">
+    <div class="fg"><label class="fl">Nom fournisseur *</label><input class="fi" type="text" id="f-nom" placeholder="Société XYZ"></div>
+    <div class="fr"><div class="fg"><label class="fl">Contact</label><input class="fi" type="text" id="f-cont"></div><div class="fg"><label class="fl">Téléphone</label><input class="fi" type="tel" id="f-tel" placeholder="+212…"></div></div>
+    <div class="fg"><label class="fl">Email</label><input class="fi" type="email" id="f-email"></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="cm('m-four')">Annuler</button><button class="btn btn-p" onclick="saveFour()">Enregistrer</button></div>
+</div></div>
+
+<!-- Type vignette -->
+<div class="ov" id="m-type"><div class="modal">
+  <div class="mh"><div class="mt" id="mt-type">Ajouter un type de vignette</div><button class="xb" onclick="cm('m-type')">×</button></div>
+  <div class="mb">
+    <input type="hidden" id="tp-eid">
+    <div class="fg"><label class="fl">Nom du type *</label><input class="fi" type="text" id="tp-nom"></div>
+    <div class="fg"><label class="fl">Catégorie *</label>
+      <select class="fs" id="tp-cat">
+        <option value="other">Entretien & Réparation</option>
+        <option value="fuel">Carburant</option>
+        <option value="water">Eau (ONEP)</option>
+        <option value="elec">Électricité (SNTL/ONEE)</option>
+        <option value="tele">Télécommunications</option>
+        <option value="post">Affranchissement & Timbres</option>
+        <option value="vtt">VTT</option>
+        <option value="vta">VTA</option>
+      </select>
+    </div>
+    <div class="fg"><label class="fl">Description</label><textarea class="fta" id="tp-desc"></textarea></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="cm('m-type')">Annuler</button><button class="btn btn-p" onclick="saveType()">Enregistrer</button></div>
+</div></div>
+
+<!-- Utilisateur -->
+<div class="ov" id="m-user"><div class="modal">
+  <div class="mh"><div class="mt" id="mt-user">Ajouter un utilisateur</div><button class="xb" onclick="cm('m-user')">×</button></div>
+  <div class="mb">
+    <input type="hidden" id="u-eid">
+    <div class="fr"><div class="fg"><label class="fl">Nom complet *</label><input class="fi" type="text" id="u-nc" placeholder="Mohamed Alami"></div><div class="fg"><label class="fl">Identifiant *</label><input class="fi" type="text" id="u-lg" placeholder="m.alami"></div></div>
+    <div class="fr"><div class="fg"><label class="fl">Mot de passe *</label><input class="fi" type="password" id="u-pw" placeholder="••••••••"></div><div class="fg"><label class="fl">Rôle *</label><select class="fs" id="u-rl"><option value="admin">Administrateur</option><option value="manager">Gestionnaire</option><option value="agent" selected>Agent</option></select></div></div>
+    <div class="fg"><label class="fl">Statut</label><select class="fs" id="u-ac"><option value="1">Actif</option><option value="0">Inactif</option></select></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="cm('m-user')">Annuler</button><button class="btn btn-p" onclick="saveUser()">Enregistrer</button></div>
+</div></div>
+
+<!-- Alerte -->
+<div class="ov" id="m-alerte"><div class="modal">
+  <div class="mh"><div class="mt" id="mt-alerte">Configurer une alerte</div><button class="xb" onclick="cm('m-alerte')">×</button></div>
+  <div class="mb">
+    <input type="hidden" id="al-eid">
+    <div class="fg"><label class="fl">Type vignette *</label><select class="fs" id="al-type"></select></div>
+    <div class="fg"><label class="fl">Seuil minimum *</label><input class="fi" type="number" id="al-seuil" min="1" placeholder="50"></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="cm('m-alerte')">Annuler</button><button class="btn btn-p" onclick="saveAlerte()">Enregistrer</button></div>
+</div></div>
+
+<!-- Supabase -->
+<div class="ov" id="m-supa"><div class="modal" style="max-width:520px">
+  <div class="mh"><div class="mt">☁ Synchronisation cloud — Supabase</div><button class="xb" onclick="cm('m-supa')">×</button></div>
+  <div class="mb">
+    <div style="background:var(--bll);border:1px solid rgba(30,58,138,.15);border-radius:8px;padding:12px;font-size:12px;color:var(--bl);margin-bottom:13px;line-height:1.9">
+      <strong>Configuration en 4 étapes</strong><br>
+      1. Compte gratuit sur <a href="https://supabase.com" target="_blank" style="color:var(--bl);font-weight:600">supabase.com</a> → nouveau projet<br>
+      2. <strong>SQL Editor</strong> → exécuter :<br>
+      <code style="display:block;margin:5px 0;background:rgba(30,58,138,.1);padding:7px;border-radius:5px;font-family:var(--mono);font-size:11px">CREATE TABLE vignette_data (id TEXT PRIMARY KEY, data TEXT, updated_at TIMESTAMPTZ);
+ALTER TABLE vignette_data ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "anon_all" ON vignette_data FOR ALL TO anon USING (true) WITH CHECK (true);</code>
+      3. <em>Project Settings → API</em> → copier URL + clé anon public
+    </div>
+    <div class="fg"><label class="fl">URL du projet *</label><input class="fi" type="url" id="supa-url" placeholder="https://xxxx.supabase.co"></div>
+    <div class="fg"><label class="fl">Clé publique anon *</label><input class="fi" type="text" id="supa-key" style="font-size:11px" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9…"></div>
+    <div id="supa-st" style="font-size:12px;min-height:16px;margin-top:4px"></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="cm('m-supa')">Annuler</button><button class="btn btn-p" onclick="saveSupaCfg()">Tester &amp; Activer</button></div>
+</div></div>
+
+<div id="toast"></div>
 <script>
 // ═══════════════════════════════════════════════════
-// DATABASE & STATE
+//  DATA
 // ═══════════════════════════════════════════════════
-const DB={
-  types:[{id:'t1',nom:'Vignette Eau',cat:'water'},{id:'t2',nom:'Vignette Électricité',cat:'elec'}],
+let DB={
   users:[
-    {id:'u1',nc:'Admin',lg:'admin',pw:'admin',role:'admin',actif:1},
-    {id:'u2',nc:'Manager',lg:'manager',pw:'manager',role:'manager',actif:1},
-    {id:'u3',nc:'Auditeur',lg:'auditor',pw:'auditor',role:'auditor',actif:1},
-    {id:'u4',nc:'Agent',lg:'agent',pw:'agent',role:'agent',actif:1}
+    {id:1,nc:'Administrateur',lg:'admin',pw:'admin123',role:'admin',actif:1,last:null},
+    {id:2,nc:'Manager Stock',lg:'manager',pw:'mgr123',role:'manager',actif:1,last:null},
+    {id:3,nc:'Agent Terrain',lg:'agent',pw:'agt123',role:'agent',actif:1,last:null}
   ],
-  mouvements:[],
-  frais:[],
-  alertes:[]
+  types:[],svcs:[],fours:[],vehs:[],
+  achats:[],mouvs:[],frais:[],alertes:[],logs:[],
+  // Permissions par rôle : pages visibles
+  rolePerms:{
+    admin:['dashboard','stock','mouvements','eau','elec','tele','post','vtt','vta','vehicules','services','fournisseurs','types','utilisateurs','alertes','logs','rapports'],
+    manager:['dashboard','stock','mouvements','eau','elec','tele','post','vtt','vta','vehicules','services','fournisseurs','types','alertes','rapports'],
+    agent:['dashboard','mouvements','alertes']
+  },
+  nid:{users:4,types:1,svcs:1,fours:1,vehs:1,achats:1,mouvs:1,frais:1,alertes:1,logs:1}
 };
+let CU=null;
+const isAdmin=()=>CU&&CU.role==='admin';
 
-let CU=null; // Current User
-const ROLES={
-  admin:{label:'Administrateur',perms:['view_all','export','manage_users','manage_roles','audit']},
-  manager:{label:'Manager',perms:['view_all','export','manage_data']},
-  auditor:{label:'Auditeur',perms:['view_all','export','audit']},
-  agent:{label:'Agent',perms:['view_own','export_own']}
-};
-
-// ═══════════════════════════════════════════════════
-// AUTHENTICATION
-// ═══════════════════════════════════════════════════
-function login(){
-  const lg=document.getElementById('lg').value.trim();
-  const pw=document.getElementById('pw').value;
-  const u=DB.users.find(x=>x.lg===lg&&x.pw===pw&&x.actif);
-  if(!u)return showError('Identifiants invalides');
-  CU=u;
-  localStorage.setItem('cu',JSON.stringify(u));
-  document.getElementById('ls').style.display='none';
-  document.getElementById('app').classList.add('on');
-  updateUI();
-  initPages();
-  updateClock();
-  setInterval(updateClock,1000);
+function save(){
+  try{localStorage.setItem('vmDB5',JSON.stringify(DB));}catch(e){}
+  if(supaOn()){clearTimeout(_spT);_spT=setTimeout(supaPush,1500);}
 }
+function load(){
+  try{const s=localStorage.getItem('vmDB5');if(s){const d=JSON.parse(s);if(d.users?.length>0)DB=Object.assign({},DB,d);else{const u=DB.users;DB=Object.assign({},DB,d);DB.users=u;}}}catch(e){}
+  // S'assurer que rolePerms existe toujours (migration données existantes)
+  if(!DB.rolePerms)DB.rolePerms={
+    admin:['dashboard','stock','mouvements','eau','elec','tele','post','vtt','vta','vehicules','services','fournisseurs','types','utilisateurs','alertes','logs','rapports'],
+    manager:['dashboard','stock','mouvements','eau','elec','tele','post','vtt','vta','vehicules','services','fournisseurs','types','alertes','rapports'],
+    agent:['dashboard','mouvements','alertes']
+  };
+}
+function nid(t){const id=DB.nid[t]++;save();return id;}
 
-function logout(){
-  CU=null;
-  localStorage.removeItem('cu');
+// Stock computation (achats - sorties - frais)
+function cStock(tid){
+  const e=DB.achats.filter(a=>a.tid==tid).reduce((s,a)=>s+a.qte,0);
+  const s=DB.mouvs.filter(m=>m.tid==tid&&['Sortie','Affectation','Perte'].includes(m.tm)).reduce((s,m)=>s+m.qte,0);
+  const r=DB.mouvs.filter(m=>m.tid==tid&&m.tm==='Retour').reduce((s,m)=>s+m.qte,0);
+  const f=DB.frais.filter(f=>f.tid==tid).reduce((s,f)=>s+f.qte,0);
+  return Math.max(0,e-s+r-f);
+}
+function cStockCat(cat){return DB.types.filter(t=>t.cat===cat).reduce((s,t)=>s+cStock(t.id),0);}
+
+// Cat color/badge helpers
+const CAT_COLOR={water:'var(--wa)',elec:'var(--el)',fuel:'var(--am)',tele:'var(--cy)',post:'var(--pk)',other:'var(--gn)',vtt:'var(--bl)',vta:'var(--rd)'};
+const CAT_LABEL={water:'💧 Eau',elec:'⚡ Électricité',fuel:'⛽ Carburant',tele:'📡 Télécom',post:'✉️ Affranchissement',other:'🔧 Entretien/Répar.',vtt:'🚗 VTT',vta:'🚙 VTA'};
+const CAT_BADGE={water:'bw',elec:'be',fuel:'ba',tele:'bt',post:'bp',other:'bg',vtt:'bb',vta:'br'};
+function catB(c){return`<span class="badge ${CAT_BADGE[c]||'bg'}">${CAT_LABEL[c]||c}</span>`;}
+
+// ═══════════════════════════════════════════════════
+//  CLOCK
+// ═══════════════════════════════════════════════════
+function tick(){
+  const n=new Date();
+  document.getElementById('clk-h').textContent=n.toLocaleTimeString('fr-FR');
+  document.getElementById('clk-d').textContent=n.toLocaleDateString('fr-FR',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+}
+setInterval(tick,1000);
+
+// ═══════════════════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════════════════
+document.getElementById('l-p').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+function doLogin(){
+  const lg=document.getElementById('l-u').value.trim();
+  const pw=document.getElementById('l-p').value;
+  const u=DB.users.find(x=>x.lg===lg&&x.pw===pw&&x.actif==1);
+  if(!u){document.getElementById('lerr').style.display='block';return;}
+  document.getElementById('lerr').style.display='none';
+  CU=u;u.last=new Date().toISOString();save();
+  log('Connexion','Utilisateur : '+u.nc);startApp();
+}
+function doLogout(){
+  log('Déconnexion','Utilisateur : '+CU.nc);CU=null;
   document.getElementById('app').classList.remove('on');
   document.getElementById('ls').style.display='flex';
-  document.getElementById('lg').value='';
-  document.getElementById('pw').value='';
+  document.getElementById('l-u').value='';document.getElementById('l-p').value='';
 }
-
-function showError(msg){
-  const el=document.getElementById('lerr');
-  el.textContent=msg;
-  el.style.display='block';
-  setTimeout(()=>el.style.display='none',3000);
-}
-
-// ═══════════════════════════════════════════════════
-// UI UPDATES
-// ═══════════════════════════════════════════════════
-function updateUI(){
-  const av=CU.nc.charAt(0).toUpperCase();
-  document.getElementById('uav').textContent=av;
+function startApp(){
+  document.getElementById('ls').style.display='none';
+  document.getElementById('app').classList.add('on');
   document.getElementById('uname').textContent=CU.nc;
-  document.getElementById('urole').textContent=ROLES[CU.role].label;
-  updateNavVisibility();
+  document.getElementById('urole').textContent=CU.role;
+  document.getElementById('uav').textContent=CU.nc.charAt(0).toUpperCase();
+  document.querySelectorAll('.adm').forEach(el=>el.classList.toggle('hide',!isAdmin()));
+  applyNavPerms();
+  tick();
+  sp('dashboard',document.querySelector('.nbtn[data-page="dashboard"]'));
 }
 
-function updateNavVisibility(){
-  const perms=ROLES[CU.role].perms;
-  document.getElementById('nav-export').style.display=perms.includes('export')?'flex':'none';
-  document.getElementById('nav-users').style.display=perms.includes('manage_users')?'flex':'none';
-  document.getElementById('nav-roles').style.display=perms.includes('manage_roles')?'flex':'none';
-  document.getElementById('nav-config').style.display=CU.role==='admin'?'flex':'none';
+// ═══════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════
+const TITLES={dashboard:'Dashboard',stock:'Stock & Achats',mouvements:'Mouvements',
+  eau:'Vignettes Eau — ONEP',elec:'Vignettes Électricité — SNTL/ONEE',
+  tele:'Vignettes Télécommunications',post:'Vignettes Affranchissement & Timbres',
+  vtt:'Vignettes VTT',vta:'Vignettes VTA',
+  vehicules:'Véhicules',services:'Services',fournisseurs:'Fournisseurs',
+  types:'Types de vignettes',utilisateurs:'Gestion des utilisateurs',
+  permissions:'Rôles & Accès',alertes:'Alertes de stock',
+  logs:"Journal d'activité",rapports:'Rapports & Exports'};
+
+// Pages toujours visibles (aucune restriction)
+const ALWAYS_VISIBLE=['dashboard'];
+// Pages réservées admin (non configurables)
+const ADMIN_ONLY=['utilisateurs','logs','permissions'];
+// Toutes les pages configurables
+const ALL_PAGES=[
+  {id:'stock',label:'Stock & Achats',ic:'📦'},
+  {id:'mouvements',label:'Mouvements',ic:'🔄'},
+  {id:'eau',label:'Vignettes Eau',ic:'💧'},
+  {id:'elec',label:'Vignettes Électricité',ic:'⚡'},
+  {id:'tele',label:'Télécommunications',ic:'📡'},
+  {id:'post',label:'Affranchissement',ic:'✉️'},
+  {id:'vtt',label:'Vignettes VTT',ic:'🚗'},
+  {id:'vta',label:'Vignettes VTA',ic:'🚙'},
+  {id:'vehicules',label:'Véhicules',ic:'🚗'},
+  {id:'services',label:'Services',ic:'🏢'},
+  {id:'fournisseurs',label:'Fournisseurs',ic:'🏭'},
+  {id:'types',label:'Types vignette',ic:'🏷️'},
+  {id:'alertes',label:'Alertes stock',ic:'🔔'},
+  {id:'rapports',label:'Rapports',ic:'📊'},
+];
+
+function canAccess(page){
+  if(!CU)return false;
+  if(ALWAYS_VISIBLE.includes(page))return true;
+  if(ADMIN_ONLY.includes(page))return isAdmin();
+  if(isAdmin())return true;
+  const perms=DB.rolePerms?.[CU.role]||[];
+  return perms.includes(page);
 }
 
-function updateClock(){
-  const now=new Date();
-  document.getElementById('clock').textContent=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+function applyNavPerms(){
+  document.querySelectorAll('.nbtn[data-page]').forEach(btn=>{
+    const page=btn.dataset.page;
+    btn.style.display=canAccess(page)?'':'none';
+  });
 }
 
-function nav(page){
+function sp(name,btn){
+  if(!canAccess(name)){toast('Accès non autorisé pour votre rôle','err');return;}
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('p-'+page).classList.add('active');
   document.querySelectorAll('.nbtn').forEach(b=>b.classList.remove('active'));
-  event.target.closest('.nbtn').classList.add('active');
-  const titles={dashboard:'Tableau de bord',stock:'Gestion du Stock',mouvements:'Mouvements',frais:'Frais & Paiements',export:'Export & Rapports',utilisateurs:'Utilisateurs',roles:'Gestion des Rôles',config:'Configuration'};
-  document.getElementById('ptitle').textContent=titles[page]||page;
-  if(page==='dashboard')renderDashboard();
-  else if(page==='stock')renderStock();
-  else if(page==='mouvements')renderMouvements();
-  else if(page==='frais')renderFrais();
-  else if(page==='utilisateurs')renderUsers();
-  else if(page==='roles')renderRoles();
+  document.getElementById('page-'+name).classList.add('active');
+  if(btn)btn.classList.add('active');
+  document.getElementById('pttl').textContent=TITLES[name]||name;
+  rnd(name);
+}
+function rnd(n){
+  const M={dashboard:rdDash,stock:rdStock,mouvements:rdMouv,
+    eau:()=>rdFrais('eau'),elec:()=>rdFrais('elec'),tele:()=>rdFrais('tele'),post:()=>rdFrais('post'),
+    vtt:()=>rdFrais('vtt'),vta:()=>rdFrais('vta'),
+    vehicules:rdVeh,services:rdSvc,fournisseurs:rdFour,types:rdTypes,
+    utilisateurs:rdUsers,alertes:rdAlertes,logs:rdLogs,
+    rapports:rdRapports,permissions:rdPerms};
+  if(M[n])M[n]();badges();
 }
 
 // ═══════════════════════════════════════════════════
-// PAGES RENDERING
+//  HELPERS
 // ═══════════════════════════════════════════════════
-function initPages(){
-  renderDashboard();
-  renderRoles();
+function fmt(d){if(!d)return'—';return new Date(d).toLocaleDateString('fr-FR');}
+function fmtDT(d){if(!d)return'—';return new Date(d).toLocaleString('fr-FR');}
+function fmtM(v){if(!v&&v!==0)return'—';return Number(v).toLocaleString('fr-FR',{minimumFractionDigits:2})+' MAD';}
+function tn(id){const t=DB.types.find(x=>x.id==id);return t?t.nom:'—';}
+function sn(id){const s=DB.svcs.find(x=>x.id==id);return s?s.nom:'—';}
+function fn(id){const f=DB.fours.find(x=>x.id==id);return f?f.nom:'—';}
+function vn(id){const v=DB.vehs.find(x=>x.id==id);return v?v.immat:'—';}
+function un(id){const u=DB.users.find(x=>x.id==id);return u?u.nc:'Système';}
+function emptyR(msg,col=8){return`<tr><td colspan="${col}"><div class="empty"><div class="eic">📭</div><div class="et">Aucun enregistrement</div><div class="ed">${msg||''}</div></div></td></tr>`;}
+function mvB(t){const m={Sortie:'br',Affectation:'bb',Retour:'ba',Perte:'bx'};return`<span class="badge ${m[t]||'bg'}">${t}</span>`;}
+function roleB(r){const m={admin:'r-admin',manager:'r-manager',agent:'r-agent'};const l={admin:'Admin',manager:'Gestionnaire',agent:'Agent'};return`<span class="${m[r]||'r-agent'}">${l[r]||r}</span>`;}
+function sbar(v,mx,c){const p=Math.min(100,Math.round(((v||0)/Math.max(mx,1))*100));return`<span class="sb"><span class="sf2" style="width:${p}%;background:${c||'var(--gn)'}"></span></span>`;}
+
+// ACTION BUTTONS — edit always, delete admin only
+function actBtns(editFn,tbl,id){
+  const d=isAdmin()?`<button class="btn btn-d" onclick="del('${tbl}',${id})" title="Supprimer">🗑</button>`:'';
+  return`<div class="acts"><button class="btn btn-e" onclick="${editFn}" title="Modifier">✏</button>${d}</div>`;
 }
 
-function renderDashboard(){
-  let html='<div class="kpi"><div class="kval">'+DB.types.length+'</div><div class="klbl">Types de vignettes</div></div>';
-  html+='<div class="kpi"><div class="kval">'+DB.users.length+'</div><div class="klbl">Utilisateurs</div></div>';
-  html+='<div class="kpi"><div class="kval">'+DB.mouvements.length+'</div><div class="klbl">Mouvements</div></div>';
-  html+='<div class="kpi"><div class="kval">'+DB.frais.length+'</div><div class="klbl">Frais enregistrés</div></div>';
-  document.getElementById('kgrid').innerHTML=html;
-  
-  let thtml='<tr><th>Date</th><th>Type</th><th>Quantité</th><th>Montant</th><th>Utilisateur</th></tr>';
-  DB.mouvements.slice(0,5).forEach(m=>{
-    const t=DB.types.find(x=>x.id===m.tid);
-    const u=DB.users.find(x=>x.id===m.uid);
-    thtml+='<tr><td>'+m.date+'</td><td>'+(t?t.nom:'N/A')+'</td><td>'+m.qte+'</td><td>'+m.mont.toFixed(2)+' MAD</td><td>'+(u?u.nc:'N/A')+'</td></tr>';
-  });
-  document.getElementById('t-recent').innerHTML=thtml||'<tr><td colspan="5" style="text-align:center;color:var(--mu)">Aucun mouvement</td></tr>';
-}
-
-function renderStock(){
-  let html='<tr><th>Nom</th><th>Catégorie</th><th>Actions</th></tr>';
-  DB.types.forEach(t=>{
-    html+='<tr><td>'+t.nom+'</td><td><span class="badge bx">'+t.cat+'</span></td><td><button class="btn btn-sm btn-e" onclick="editType(\''+t.id+'\')">Modifier</button></td></tr>';
-  });
-  document.getElementById('t-stock').innerHTML=html;
-}
-
-function renderMouvements(){
-  let html='<tr><th>Date</th><th>Type</th><th>Quantité</th><th>Montant</th><th>Utilisateur</th><th>Actions</th></tr>';
-  DB.mouvements.forEach(m=>{
-    const t=DB.types.find(x=>x.id===m.tid);
-    const u=DB.users.find(x=>x.id===m.uid);
-    html+='<tr><td>'+m.date+'</td><td>'+(t?t.nom:'N/A')+'</td><td>'+m.qte+'</td><td>'+m.mont.toFixed(2)+' MAD</td><td>'+(u?u.nc:'N/A')+'</td><td><button class="btn btn-sm btn-d" onclick="delMouv(\''+m.id+'\')">Supprimer</button></td></tr>';
-  });
-  document.getElementById('t-mouv').innerHTML=html||'<tr><td colspan="6" style="text-align:center;color:var(--mu)">Aucun mouvement</td></tr>';
-  
-  let opts='<option value="">Tous les types</option>';
-  DB.types.forEach(t=>opts+='<option value="'+t.id+'">'+t.nom+'</option>');
-  document.getElementById('filter-mouv').innerHTML=opts;
-  
-  let types='<option value="">-- Sélectionner --</option>';
-  DB.types.forEach(t=>types+='<option value="'+t.id+'">'+t.nom+'</option>');
-  document.getElementById('mv-type').innerHTML=types;
-}
-
-function renderFrais(){
-  let html='<tr><th>Date</th><th>Catégorie</th><th>Numéro</th><th>Montant</th><th>Utilisateur</th><th>Actions</th></tr>';
-  DB.frais.forEach(f=>{
-    const u=DB.users.find(x=>x.id===f.uid);
-    html+='<tr><td>'+f.date+'</td><td><span class="badge bx">'+f.cat+'</span></td><td>'+f.num+'</td><td>'+f.mont.toFixed(2)+' MAD</td><td>'+(u?u.nc:'N/A')+'</td><td><button class="btn btn-sm btn-d" onclick="delFrais(\''+f.id+'\')">Supprimer</button></td></tr>';
-  });
-  document.getElementById('t-frais').innerHTML=html||'<tr><td colspan="6" style="text-align:center;color:var(--mu)">Aucun frais</td></tr>';
-}
-
-function renderUsers(){
-  let html='<tr><th>Nom</th><th>Identifiant</th><th>Rôle</th><th>Statut</th><th>Actions</th></tr>';
-  DB.users.forEach(u=>{
-    const roleClass='r-'+u.role;
-    const status=u.actif?'<span class="badge bg">Actif</span>':'<span class="badge br">Inactif</span>';
-    html+='<tr><td>'+u.nc+'</td><td><code style="font-size:11px">'+u.lg+'</code></td><td><span class="badge '+roleClass+'">'+ROLES[u.role].label+'</span></td><td>'+status+'</td><td><button class="btn btn-sm btn-e" onclick="editUser(\''+u.id+'\')">Modifier</button></td></tr>';
-  });
-  document.getElementById('t-users').innerHTML=html;
-}
-
-function renderRoles(){
-  let html='';
-  for(const [key,role] of Object.entries(ROLES)){
-    html+='<div class="rbac-card" onclick="selectRole(\''+key+'\')"><div class="rbac-title">'+role.label+'</div><div class="rbac-desc">'+role.perms.length+' permissions</div></div>';
-  }
-  document.getElementById('rbac-grid').innerHTML=html;
-  
-  let details='<table class="dt" style="width:100%"><tr><th>Rôle</th><th>Permissions</th></tr>';
-  for(const [key,role] of Object.entries(ROLES)){
-    details+='<tr><td><strong>'+role.label+'</strong></td><td>'+role.perms.join(', ')+'</td></tr>';
-  }
-  details+='</table>';
-  document.getElementById('rbac-details').innerHTML=details;
-}
-
-function selectRole(role){
-  document.querySelectorAll('.rbac-card').forEach(c=>c.classList.remove('active'));
-  event.target.closest('.rbac-card').classList.add('active');
-}
+function log(action,details){DB.logs.unshift({id:nid('logs'),dt:new Date().toISOString(),uid:CU?CU.id:0,action,details});if(DB.logs.length>500)DB.logs=DB.logs.slice(0,500);save();}
+function toast(msg,type='ok'){const t=document.getElementById('toast');t.className=type;t.textContent=msg;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',3500);}
 
 // ═══════════════════════════════════════════════════
-// EXPORT FUNCTIONS
+//  MODAL
 // ═══════════════════════════════════════════════════
-function exportToExcel(type){
-  let data=[];
-  if(type==='stock'){
-    data=[['Nom','Catégorie'],...DB.types.map(t=>[t.nom,t.cat])];
-  }else if(type==='mouvements'){
-    data=[['Date','Type','Quantité','Montant','Utilisateur'],...DB.mouvements.map(m=>{
-      const t=DB.types.find(x=>x.id===m.tid);
-      const u=DB.users.find(x=>x.id===m.uid);
-      return[m.date,t?t.nom:'N/A',m.qte,m.mont,u?u.nc:'N/A'];
-    })];
-  }else if(type==='frais'){
-    data=[['Date','Catégorie','Numéro','Montant','Utilisateur'],...DB.frais.map(f=>{
-      const u=DB.users.find(x=>x.id===f.uid);
-      return[f.date,f.cat,f.num,f.mont,u?u.nc:'N/A'];
-    })];
-  }
-  const ws=XLSX.utils.aoa_to_sheet(data);
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,type);
-  XLSX.writeFile(wb,'rapport_'+type+'_'+new Date().toISOString().split('T')[0]+'.xlsx');
-  toast('Export Excel réussi ✓','ok');
+function om(id){
+  pops();
+  document.querySelectorAll(`#${id} input[type=date]`).forEach(i=>{if(!i.value)i.value=new Date().toISOString().split('T')[0];});
+  document.getElementById(id).classList.add('open');
 }
-
-function exportToPDF(type){
-  let html='<h2>Rapport '+type+'</h2>';
-  if(type==='stock'){
-    html+='<table border="1" cellpadding="5"><tr><th>Nom</th><th>Catégorie</th></tr>';
-    DB.types.forEach(t=>html+='<tr><td>'+t.nom+'</td><td>'+t.cat+'</td></tr>');
-    html+='</table>';
-  }else if(type==='mouvements'){
-    html+='<table border="1" cellpadding="5"><tr><th>Date</th><th>Type</th><th>Quantité</th><th>Montant</th></tr>';
-    DB.mouvements.forEach(m=>{
-      const t=DB.types.find(x=>x.id===m.tid);
-      html+='<tr><td>'+m.date+'</td><td>'+(t?t.nom:'N/A')+'</td><td>'+m.qte+'</td><td>'+m.mont.toFixed(2)+' MAD</td></tr>';
-    });
-    html+='</table>';
-  }else if(type==='frais'){
-    html+='<table border="1" cellpadding="5"><tr><th>Date</th><th>Catégorie</th><th>Numéro</th><th>Montant</th></tr>';
-    DB.frais.forEach(f=>html+='<tr><td>'+f.date+'</td><td>'+f.cat+'</td><td>'+f.num+'</td><td>'+f.mont.toFixed(2)+' MAD</td></tr>');
-    html+='</table>';
-  }
-  const opt={margin:10,filename:'rapport_'+type+'_'+new Date().toISOString().split('T')[0]+'.pdf',image:{type:'jpeg',quality:0.98},html2canvas:{scale:2},jsPDF:{orientation:'portrait',unit:'mm',format:'a4'}};
-  html2pdf().set(opt).from(html).save();
-  toast('Export PDF réussi ✓','ok');
-}
-
-function generateControlReport(format){
-  const date=new Date().toLocaleDateString('fr-FR');
-  let html='<h2>Rapport de Contrôle Interne</h2><p>Date: '+date+'</p>';
-  html+='<h3>Résumé</h3>';
-  html+='<ul><li>Types de vignettes: '+DB.types.length+'</li><li>Utilisateurs: '+DB.users.length+'</li><li>Mouvements: '+DB.mouvements.length+'</li><li>Frais: '+DB.frais.length+'</li></ul>';
-  html+='<h3>Détails des mouvements</h3>';
-  html+='<table border="1" cellpadding="5"><tr><th>Date</th><th>Type</th><th>Quantité</th><th>Montant</th><th>Utilisateur</th></tr>';
-  DB.mouvements.forEach(m=>{
-    const t=DB.types.find(x=>x.id===m.tid);
-    const u=DB.users.find(x=>x.id===m.uid);
-    html+='<tr><td>'+m.date+'</td><td>'+(t?t.nom:'N/A')+'</td><td>'+m.qte+'</td><td>'+m.mont.toFixed(2)+' MAD</td><td>'+(u?u.nc:'N/A')+'</td></tr>';
+function cm(id){
+  document.getElementById(id).classList.remove('open');
+  document.querySelectorAll(`#${id} input:not([type=date]):not([type=hidden]),#${id} textarea`).forEach(el=>el.value='');
+  // Reset all hidden edit IDs and modal titles
+  [['a-eid','mt-achat','Nouvel achat — Entrée en stock'],
+   ['mv-eid','mt-mouv','Enregistrer un mouvement'],
+   ['v-eid','mt-veh','Ajouter un véhicule'],
+   ['sv-eid','mt-svc','Ajouter un service'],
+   ['f-eid','mt-four','Ajouter un fournisseur'],
+   ['tp-eid','mt-type','Ajouter un type de vignette'],
+   ['u-eid','mt-user','Ajouter un utilisateur'],
+   ['al-eid','mt-alerte','Configurer une alerte'],
+   ['pe-eid',null,null],['el-eid',null,null],['te-eid',null,null],['po-eid',null,null],
+   ['vt-eid',null,null],['va-eid',null,null]
+  ].forEach(([eid,tid,ttl])=>{
+    const e=document.getElementById(eid);if(e)e.value='';
+    if(tid){const t=document.getElementById(tid);if(t)t.textContent=ttl;}
   });
-  html+='</table>';
-  
-  if(format==='excel'){
-    const data=[['Rapport de Contrôle Interne'],['Date',date],[''],['Résumé'],['Types de vignettes',DB.types.length],['Utilisateurs',DB.users.length],['Mouvements',DB.mouvements.length],['Frais',DB.frais.length],[''],['Détails des mouvements'],['Date','Type','Quantité','Montant','Utilisateur'],...DB.mouvements.map(m=>{const t=DB.types.find(x=>x.id===m.tid);const u=DB.users.find(x=>x.id===m.uid);return[m.date,t?t.nom:'N/A',m.qte,m.mont,u?u.nc:'N/A'];})];
-    const ws=XLSX.utils.aoa_to_sheet(data);
-    const wb=XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,ws,'Rapport');
-    XLSX.writeFile(wb,'rapport_controle_'+new Date().toISOString().split('T')[0]+'.xlsx');
+  // Clear hints
+  ['mv-hint','mv-detail','pe-stk-info','el-stk-info','te-stk-info','po-stk-info'].forEach(x=>{const el=document.getElementById(x);if(el){el.style.display='none';el.textContent='';}});
+}
+
+function pops(){
+  const tO=DB.types.map(t=>`<option value="${t.id}">${t.nom}</option>`).join('');
+  const sO='<option value="">-- Aucun --</option>'+DB.svcs.map(s=>`<option value="${s.id}">${s.nom}</option>`).join('');
+  const fO=DB.fours.map(f=>`<option value="${f.id}">${f.nom}</option>`).join('');
+  const vO='<option value="">-- Aucun --</option>'+DB.vehs.map(v=>`<option value="${v.id}">${v.immat}</option>`).join('');
+  ['a-type','mv-type','al-type'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=tO||'<option value="">Aucun type</option>';});
+  ['mv-svc','mv-svc2','v-svc','pe-svc','el-svc','te-svc','po-svc'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=sO;});
+  const af=document.getElementById('a-four');if(af)af.innerHTML=fO||'<option value="">Aucun fournisseur</option>';
+  const mv=document.getElementById('mv-veh');if(mv)mv.innerHTML=vO;
+  ['vt-veh','va-veh'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=vO;});
+  const fat=document.getElementById('fa-type');if(fat)fat.innerHTML='<option value="">Tous les types</option>'+tO;
+}
+
+// Catégories qui utilisent un véhicule (fuel, other) dans les mouvements standards
+const CAT_USES_VEH=['fuel','other'];
+// Catégories frais généraux (pas de véhicule, juste référence)
+const CAT_FRAIS=['water','elec','tele','post','vtt','vta'];
+
+function adaptMouvForm(){
+  const tid=document.getElementById('mv-type').value;
+  const type=DB.types.find(t=>t.id==tid);
+  const cat=type?type.cat||'other':'other';
+  const fVeh=document.getElementById('mv-fields-veh');
+  const fSvc=document.getElementById('mv-fields-svc');
+  const fRef=document.getElementById('mv-fields-ref');
+  // Avertissement si catégorie frais généraux
+  let warn=document.getElementById('mv-frais-warn');
+  if(!warn){warn=document.createElement('div');warn.id='mv-frais-warn';warn.style.cssText='display:none;background:var(--aml);border:1px solid rgba(146,64,14,.25);border-radius:6px;padding:8px 11px;font-size:12px;color:var(--am);margin-bottom:8px';document.getElementById('mv-fields-veh').parentNode.insertBefore(warn,document.getElementById('mv-fields-veh'));}
+  if(CAT_FRAIS.includes(cat)){
+    const pageMap={water:'eau',elec:'elec',tele:'tele',post:'post',vtt:'vtt',vta:'vta'};
+    warn.style.display='block';
+    warn.innerHTML=`⚠ Ce type de vignette est un frais général. Utilisez plutôt la page <strong>"${TITLES[pageMap[cat]]||cat}"</strong> pour enregistrer cette opération et éviter un double comptage.`;
+  }else{warn.style.display='none';}
+  if(CAT_USES_VEH.includes(cat)){
+    fVeh.style.display='grid';fSvc.style.display='none';fRef.style.display='none';
+  }else if(CAT_FRAIS.includes(cat)){
+    fVeh.style.display='none';fSvc.style.display='block';fRef.style.display='block';
+    const refEl=document.getElementById('mv-ref');
+    if(refEl){const ph={water:'N° compteur eau…',elec:'N° compteur électricité…',tele:'N° ligne / abonnement…',post:'N° pli / référence courrier…',vtt:'Référence VTT…',vta:'Référence VTA…'};refEl.placeholder=ph[cat]||'Référence…';}
   }else{
-    const opt={margin:10,filename:'rapport_controle_'+new Date().toISOString().split('T')[0]+'.pdf',image:{type:'jpeg',quality:0.98},html2canvas:{scale:2},jsPDF:{orientation:'portrait',unit:'mm',format:'a4'}};
-    html2pdf().set(opt).from(html).save();
+    fVeh.style.display='none';fSvc.style.display='block';fRef.style.display='none';
   }
-  toast('Rapport généré ✓','ok');
-}
-
-function generateAuditTrail(format){
-  const date=new Date().toLocaleDateString('fr-FR');
-  let data=[['Audit Trail - '+date],[''],['Utilisateurs'],['Nom','Identifiant','Rôle','Statut'],...DB.users.map(u=>[u.nc,u.lg,ROLES[u.role].label,u.actif?'Actif':'Inactif']),[''],['Mouvements'],['Date','Type','Quantité','Montant','Utilisateur'],...DB.mouvements.map(m=>{const t=DB.types.find(x=>x.id===m.tid);const u=DB.users.find(x=>x.id===m.uid);return[m.date,t?t.nom:'N/A',m.qte,m.mont,u?u.nc:'N/A'];})];
-  
-  if(format==='excel'){
-    const ws=XLSX.utils.aoa_to_sheet(data);
-    const wb=XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,ws,'Audit');
-    XLSX.writeFile(wb,'audit_trail_'+new Date().toISOString().split('T')[0]+'.xlsx');
-  }else{
-    let html='<h2>Audit Trail</h2><p>Date: '+date+'</p>';
-    html+='<h3>Utilisateurs</h3><table border="1" cellpadding="5"><tr><th>Nom</th><th>Identifiant</th><th>Rôle</th><th>Statut</th></tr>';
-    DB.users.forEach(u=>html+='<tr><td>'+u.nc+'</td><td>'+u.lg+'</td><td>'+ROLES[u.role].label+'</td><td>'+(u.actif?'Actif':'Inactif')+'</td></tr>');
-    html+='</table><h3>Mouvements</h3><table border="1" cellpadding="5"><tr><th>Date</th><th>Type</th><th>Quantité</th><th>Montant</th><th>Utilisateur</th></tr>';
-    DB.mouvements.forEach(m=>{const t=DB.types.find(x=>x.id===m.tid);const u=DB.users.find(x=>x.id===m.uid);html+='<tr><td>'+m.date+'</td><td>'+(t?t.nom:'N/A')+'</td><td>'+m.qte+'</td><td>'+m.mont.toFixed(2)+' MAD</td><td>'+(u?u.nc:'N/A')+'</td></tr>';});
-    html+='</table>';
-    const opt={margin:10,filename:'audit_trail_'+new Date().toISOString().split('T')[0]+'.pdf',image:{type:'jpeg',quality:0.98},html2canvas:{scale:2},jsPDF:{orientation:'portrait',unit:'mm',format:'a4'}};
-    html2pdf().set(opt).from(html).save();
-  }
-  toast('Audit trail généré ✓','ok');
 }
 
 // ═══════════════════════════════════════════════════
-// CRUD OPERATIONS
+//  AUTO CALCULATIONS
+// ═══════════════════════════════════════════════════
+function calcAchat(){
+  const q=parseFloat(document.getElementById('a-qte').value)||0;
+  const p=parseFloat(document.getElementById('a-prix').value)||0;
+  document.getElementById('a-mont').value=(q*p>0)?(q*p).toFixed(2):'';
+}
+
+function calcMouv(){
+  const tid=document.getElementById('mv-type').value;
+  const qte=parseFloat(document.getElementById('mv-qte').value)||0;
+  const hint=document.getElementById('mv-hint');
+  const detail=document.getElementById('mv-detail');
+  if(!tid||qte<=0){hint.style.display='none';detail.style.display='none';return;}
+  const last=DB.achats.filter(a=>a.tid==tid&&(a.prix||0)>0).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
+  if(!last){hint.style.display='none';detail.style.display='none';return;}
+  const m=(qte*last.prix).toFixed(2);
+  document.getElementById('mv-mont').value=m;
+  hint.style.display='inline';
+  detail.style.display='block';
+  detail.innerHTML=`${qte} × ${Number(last.prix).toLocaleString('fr-FR',{minimumFractionDigits:2})} MAD (achat du ${fmt(last.date)}) = <strong>${Number(m).toLocaleString('fr-FR',{minimumFractionDigits:2})} MAD</strong>`;
+}
+
+function autoSvc(){
+  const vid=document.getElementById('mv-veh').value;
+  if(!vid)return;
+  const v=DB.vehs.find(x=>x.id==vid);
+  if(v?.sid){const s=document.getElementById('mv-svc');if(s)s.value=v.sid;}
+}
+
+function showStock(cat,infoId,qteVal){
+  const el=document.getElementById(infoId);if(!el)return;
+  const stk=cStockCat(cat);
+  const q=parseInt(qteVal)||0;
+  const r=stk-q;
+  el.style.display='block';
+  el.textContent=`Stock disponible : ${stk} vignette${stk!==1?'s':''} → après déduction : ${r} vignette${r!==1?'s':''}`;
+  el.style.color=r<0?'var(--rd)':'var(--mu)';
+}
+
+// ═══════════════════════════════════════════════════
+//  SAVES
 // ═══════════════════════════════════════════════════
 function saveType(){
-  const nom=document.getElementById('tp-nom').value.trim();
-  if(!nom)return toast('Nom obligatoire','err');
-  DB.types.push({id:'t'+(Date.now()),nom,cat:document.getElementById('tp-cat').value});
-  toast('Type ajouté ✓','ok');
-  cm('m-type');
-  renderStock();
+  const eid=document.getElementById('tp-eid').value;
+  const nom=document.getElementById('tp-nom').value.trim();if(!nom)return toast('Nom obligatoire','err');
+  const cat=document.getElementById('tp-cat').value;
+  const desc=document.getElementById('tp-desc').value;
+  if(eid){const t=DB.types.find(x=>x.id==eid);if(t){t.nom=nom;t.cat=cat;t.desc=desc;}log('Modif type',nom);toast('Type modifié ✓');}
+  else{DB.types.push({id:nid('types'),nom,cat,desc});log('Ajout type',nom);toast('Type ajouté ✓');}
+  save();cm('m-type');rnd('types');
+}
+function saveSvc(){
+  const eid=document.getElementById('sv-eid').value;
+  const nom=document.getElementById('sv-nom').value.trim();if(!nom)return toast('Nom obligatoire','err');
+  const obj={nom,gerant:document.getElementById('sv-gerant').value,tel:document.getElementById('sv-tel').value,desc:document.getElementById('sv-desc').value};
+  if(eid){const s=DB.svcs.find(x=>x.id==eid);if(s)Object.assign(s,obj);log('Modif service',nom);toast('Service modifié ✓');}
+  else{DB.svcs.push({id:nid('svcs'),...obj});log('Ajout service',nom);toast('Service ajouté ✓');}
+  save();cm('m-svc');rnd('services');
+}
+function saveFour(){
+  const eid=document.getElementById('f-eid').value;
+  const nom=document.getElementById('f-nom').value.trim();if(!nom)return toast('Nom obligatoire','err');
+  const obj={nom,cont:document.getElementById('f-cont').value,tel:document.getElementById('f-tel').value,email:document.getElementById('f-email').value};
+  if(eid){const f=DB.fours.find(x=>x.id==eid);if(f)Object.assign(f,obj);log('Modif fournisseur',nom);toast('Fournisseur modifié ✓');}
+  else{DB.fours.push({id:nid('fours'),...obj});log('Ajout fournisseur',nom);toast('Fournisseur ajouté ✓');}
+  save();cm('m-four');rnd('fournisseurs');
+}
+function saveVeh(){
+  const eid=document.getElementById('v-eid').value;
+  const immat=document.getElementById('v-immat').value.trim();if(!immat)return toast('Immatriculation obligatoire','err');
+  const obj={immat,marque:document.getElementById('v-marque').value,modele:document.getElementById('v-modele').value,carb:document.getElementById('v-carb').value,dmis:document.getElementById('v-dmis').value,sid:document.getElementById('v-svc').value};
+  if(eid){const v=DB.vehs.find(x=>x.id==eid);if(v)Object.assign(v,obj);log('Modif véhicule',immat);toast('Véhicule modifié ✓');}
+  else{DB.vehs.push({id:nid('vehs'),...obj});log('Ajout véhicule',immat);toast('Véhicule ajouté ✓');}
+  save();cm('m-veh');rnd('vehicules');
+}
+function saveAchat(){
+  const eid=document.getElementById('a-eid').value;
+  const tid=document.getElementById('a-type').value;const fid=document.getElementById('a-four').value;
+  const qte=parseInt(document.getElementById('a-qte').value);const date=document.getElementById('a-date').value;
+  if(!tid||!fid||!qte||!date)return toast('Champs obligatoires manquants','err');
+  const prix=parseFloat(document.getElementById('a-prix').value)||0;
+  const mont=parseFloat(document.getElementById('a-mont').value)||0;
+  const lot=document.getElementById('a-lot').value;
+  if(eid){
+    const a=DB.achats.find(x=>x.id==eid);
+    if(a){a.date=date;a.tid=tid;a.fid=fid;a.qte=qte;a.prix=prix;a.mont=mont;a.lot=lot;}
+    log('Modif achat',tn(tid)+' ×'+qte);toast('Achat modifié ✓');
+  }else{
+    DB.achats.unshift({id:nid('achats'),date,tid,fid,qte,prix,mont,lot,uid:CU.id,at:new Date().toISOString()});
+    log('Achat enregistré',tn(tid)+' ×'+qte);toast('Achat enregistré ✓');
+  }
+  chkAl();save();cm('m-achat');rnd('stock');
+}
+function saveMouv(){
+  const eid=document.getElementById('mv-eid').value;
+  const tid=document.getElementById('mv-type').value;const tm=document.getElementById('mv-tm').value;
+  const qte=parseInt(document.getElementById('mv-qte').value);const date=document.getElementById('mv-date').value;
+  if(!tid||!qte||!date)return toast('Champs obligatoires manquants','err');
+  const stk=cStock(tid);
+  const isSortie=['Sortie','Affectation','Perte'].includes(tm);
+  if(isSortie&&stk<qte)return toast('Stock insuffisant ('+stk+' disponibles)','err');
+  const rel=isSortie?stk-qte:stk+qte;
+  // Récupérer véhicule/service/ref selon catégorie
+  const type=DB.types.find(t=>t.id==tid);
+  const cat=type?type.cat||'other':'other';
+  let vid=null,sid=null,ref='';
+  if(CAT_USES_VEH.includes(cat)){
+    vid=document.getElementById('mv-veh').value||null;
+    sid=document.getElementById('mv-svc').value||null;
+  }else if(CAT_FRAIS.includes(cat)){
+    sid=document.getElementById('mv-svc2').value||null;
+    ref=document.getElementById('mv-ref').value||'';
+  }else{
+    sid=document.getElementById('mv-svc2').value||null;
+  }
+  const obj={date,tm,tid,qte,vid,sid,ref,just:document.getElementById('mv-just').value,mont:parseFloat(document.getElementById('mv-mont').value)||0,rel,uid:CU.id};
+  if(eid){const m=DB.mouvs.find(x=>x.id==eid);if(m)Object.assign(m,obj);log('Modif mouvement',tn(tid));toast('Mouvement modifié ✓');}
+  else{DB.mouvs.unshift({id:nid('mouvs'),...obj,at:new Date().toISOString()});log('Mouvement '+tm,tn(tid)+' ×'+qte);toast('Mouvement enregistré ✓');}
+  chkAl();save();cm('m-mouv');rnd('mouvements');
 }
 
-function editType(id){
-  const t=DB.types.find(x=>x.id===id);
-  if(!t)return;
-  document.getElementById('tp-nom').value=t.nom;
-  document.getElementById('tp-cat').value=t.cat||'other';
-  document.getElementById('m-type').classList.add('open');
+// frais catégorie → prefix map
+const FR_PFX={eau:'pe',elec:'el',tele:'te',post:'po',vtt:'vt',vta:'va'};
+const FR_CAT_MAP={eau:'water',elec:'elec',tele:'tele',post:'post',vtt:'vtt',vta:'vta'};
+
+function saveFrais(cat){
+  const pfx=FR_PFX[cat];
+  const eid=document.getElementById(pfx+'-eid').value;
+  const date=document.getElementById(pfx+'-date').value;
+  const num=document.getElementById(pfx+'-num').value.trim();
+  const qte=parseInt(document.getElementById(pfx+'-qte').value);
+  const mont=parseFloat(document.getElementById(pfx+'-mont').value);
+  if(!date||!num||!qte||!mont)return toast('Champs obligatoires manquants','err');
+  const catKey=FR_CAT_MAP[cat];
+  const types=DB.types.filter(t=>t.cat===catKey);
+  if(!types.length)return toast('Aucun type de vignette '+CAT_LABEL[catKey]+' configuré.','err');
+  const stk=types.reduce((s,t)=>s+cStock(t.id),0);
+  if(stk<qte)return toast('Stock insuffisant : '+stk+' vignette'+(stk!==1?'s':'')+' disponible'+(stk!==1?'s':''),'err');
+  const tid=types[0].id;
+  const des=document.getElementById(pfx+'-des')?.value||'';
+  const dest=cat==='post'?document.getElementById('po-dest')?.value||'':'';
+  const tcourrier=cat==='post'?document.getElementById('po-tcourrier')?.value||'':'';
+  // VTT/VTA : stocker l'id du véhicule dans vid, service dans sid
+  let svcId=null,vid=null;
+  if(cat==='vtt'||cat==='vta'){
+    vid=document.getElementById(pfx+'-veh')?.value||null;
+  }else{
+    svcId=document.getElementById(pfx+'-svc')?.value||null;
+  }
+  const obj={date,cat,catKey,tid,num,des,dest,tcourrier,qte,mont,sid:svcId,vid,uid:CU.id};
+  if(eid){const f=DB.frais.find(x=>x.id==eid);if(f)Object.assign(f,obj);log('Modif '+cat,num);toast(cat.toUpperCase()+' modifié ✓');}
+  else{DB.frais.unshift({id:nid('frais'),...obj,at:new Date().toISOString()});log('Enregistrement '+cat,num+' — '+qte+' vignette(s) — '+fmtM(mont));toast('Enregistré ✓');}
+  chkAl();save();cm('m-frais-'+cat);rnd(cat);
 }
 
 function saveUser(){
-  const nc=document.getElementById('u-nc').value.trim();
-  const lg=document.getElementById('u-lg').value.trim();
-  const pw=document.getElementById('u-pw').value;
-  const role=document.getElementById('u-rl').value;
-  if(!nc||!lg||!pw)return toast('Champs obligatoires','err');
-  if(DB.users.find(x=>x.lg===lg))return toast('Identifiant déjà utilisé','err');
-  DB.users.push({id:'u'+(Date.now()),nc,lg,pw,role,actif:1});
-  toast('Utilisateur créé ✓','ok');
-  cm('m-user');
-  renderUsers();
-}
-
-function editUser(id){
-  const u=DB.users.find(x=>x.id===id);
-  if(!u)return;
-  document.getElementById('u-nc').value=u.nc;
-  document.getElementById('u-lg').value=u.lg;
-  document.getElementById('u-pw').value='';
-  document.getElementById('u-rl').value=u.role;
-  document.getElementById('m-user').classList.add('open');
-}
-
-function saveMouv(){
-  const date=document.getElementById('mv-date').value;
-  const tid=document.getElementById('mv-type').value;
-  const qte=parseInt(document.getElementById('mv-qte').value);
-  const mont=parseFloat(document.getElementById('mv-mont').value)||0;
-  if(!date||!tid||!qte)return toast('Champs obligatoires','err');
-  DB.mouvements.unshift({id:'m'+(Date.now()),date,tid,qte,mont,uid:CU.id});
-  toast('Mouvement enregistré ✓','ok');
-  cm('m-mouv');
-  renderMouvements();
-}
-
-function delMouv(id){
-  DB.mouvements=DB.mouvements.filter(x=>x.id!==id);
-  toast('Mouvement supprimé ✓','ok');
-  renderMouvements();
-}
-
-function delFrais(id){
-  DB.frais=DB.frais.filter(x=>x.id!==id);
-  toast('Frais supprimé ✓','ok');
-  renderFrais();
-}
-
-function saveConfig(){
-  const orgName=document.getElementById('org-name').value;
-  localStorage.setItem('orgName',orgName);
-  toast('Configuration sauvegardée ✓','ok');
-}
-
-// ═══════════════════════════════════════════════════
-// UTILITIES
-// ═══════════════════════════════════════════════════
-function om(id){
-  document.getElementById(id).classList.add('open');
-}
-
-function cm(id){
-  document.getElementById(id).classList.remove('open');
-  document.getElementById(id).querySelectorAll('input,textarea,select').forEach(el=>el.value='');
-}
-
-function toast(msg,type='ok'){
-  const t=document.createElement('div');
-  t.className='toast '+(type==='err'?'err':'ok');
-  t.textContent=msg;
-  document.body.appendChild(t);
-  setTimeout(()=>t.remove(),3000);
-}
-
-function filterTable(inputId,tableId){
-  const filter=document.getElementById(inputId).value.toLowerCase();
-  const table=document.getElementById(tableId);
-  const rows=table.querySelectorAll('tbody tr');
-  rows.forEach(row=>{
-    const text=row.textContent.toLowerCase();
-    row.style.display=text.includes(filter)?'':'none';
-  });
-}
-
-function filterByType(tableId,typeId){
-  const table=document.getElementById(tableId);
-  const rows=table.querySelectorAll('tbody tr');
-  rows.forEach(row=>{
-    if(!typeId){row.style.display='';}else{
-      const m=DB.mouvements.find(x=>x.id===row.dataset.id);
-      row.style.display=(m&&m.tid===typeId)?'':'none';
-    }
-  });
-}
-
-function filterByCategory(tableId,cat){
-  const table=document.getElementById(tableId);
-  const rows=table.querySelectorAll('tbody tr');
-  rows.forEach(row=>{
-    if(!cat){row.style.display='';}else{
-      const f=DB.frais.find(x=>x.id===row.dataset.id);
-      row.style.display=(f&&f.cat===cat)?'':'none';
-    }
-  });
-}
-
-// Initialize on load
-window.addEventListener('load',()=>{
-  const cu=localStorage.getItem('cu');
-  if(cu){
-    CU=JSON.parse(cu);
-    document.getElementById('ls').style.display='none';
-    document.getElementById('app').classList.add('on');
-    updateUI();
-    initPages();
-    updateClock();
-    setInterval(updateClock,1000);
+  const eid=document.getElementById('u-eid').value;
+  const nc=document.getElementById('u-nc').value.trim();const lg=document.getElementById('u-lg').value.trim();
+  const pw=document.getElementById('u-pw').value;const role=document.getElementById('u-rl').value;
+  const actif=parseInt(document.getElementById('u-ac').value);
+  if(!nc||!lg)return toast('Nom et identifiant obligatoires','err');
+  if(eid){
+    const u=DB.users.find(x=>x.id==eid);
+    if(u){u.nc=nc;u.lg=lg;if(pw)u.pw=pw;u.role=role;u.actif=actif;}
+    log('Modif utilisateur',nc);toast('Utilisateur modifié ✓');
+  }else{
+    if(!pw)return toast('Mot de passe obligatoire','err');
+    if(DB.users.find(x=>x.lg===lg))return toast('Identifiant déjà utilisé','err');
+    DB.users.push({id:nid('users'),nc,lg,pw,role,actif,last:null});
+    log('Création utilisateur',nc);toast('Utilisateur créé ✓');
   }
-});
+  save();cm('m-user');rnd('utilisateurs');
+}
+function saveAlerte(){
+  const eid=document.getElementById('al-eid').value;
+  const tid=document.getElementById('al-type').value;const seuil=parseInt(document.getElementById('al-seuil').value);
+  if(!tid||!seuil)return toast('Champs obligatoires manquants','err');
+  if(eid){const a=DB.alertes.find(x=>x.id==eid);if(a){a.tid=tid;a.seuil=seuil;}log('Modif alerte',tn(tid));toast('Alerte modifiée ✓');}
+  else{const ex=DB.alertes.find(a=>a.tid==tid);if(ex)ex.seuil=seuil;else DB.alertes.push({id:nid('alertes'),tid,seuil,statut:'Actif',da:null});log('Config alerte',tn(tid)+' seuil:'+seuil);toast('Alerte configurée ✓');}
+  chkAl();save();cm('m-alerte');rnd('alertes');
+}
+
+// ═══════════════════════════════════════════════════
+//  EDIT FUNCTIONS
+// ═══════════════════════════════════════════════════
+function editType(id){const t=DB.types.find(x=>x.id==id);if(!t)return;document.getElementById('tp-eid').value=t.id;document.getElementById('tp-nom').value=t.nom;document.getElementById('tp-cat').value=t.cat||'other';document.getElementById('tp-desc').value=t.desc||'';document.getElementById('mt-type').textContent='Modifier type de vignette';om('m-type');}
+function editSvc(id){const s=DB.svcs.find(x=>x.id==id);if(!s)return;document.getElementById('sv-eid').value=s.id;document.getElementById('sv-nom').value=s.nom;document.getElementById('sv-gerant').value=s.gerant||'';document.getElementById('sv-tel').value=s.tel||'';document.getElementById('sv-desc').value=s.desc||'';document.getElementById('mt-svc').textContent='Modifier le service';om('m-svc');}
+function editFour(id){const f=DB.fours.find(x=>x.id==id);if(!f)return;document.getElementById('f-eid').value=f.id;document.getElementById('f-nom').value=f.nom;document.getElementById('f-cont').value=f.cont||'';document.getElementById('f-tel').value=f.tel||'';document.getElementById('f-email').value=f.email||'';document.getElementById('mt-four').textContent='Modifier le fournisseur';om('m-four');}
+function editVeh(id){const v=DB.vehs.find(x=>x.id==id);if(!v)return;pops();document.getElementById('v-eid').value=v.id;document.getElementById('v-immat').value=v.immat;document.getElementById('v-marque').value=v.marque||'';document.getElementById('v-modele').value=v.modele||'';document.getElementById('v-carb').value=v.carb||'';document.getElementById('v-dmis').value=v.dmis||'';document.getElementById('v-svc').value=v.sid||'';document.getElementById('mt-veh').textContent='Modifier le véhicule';document.getElementById('m-veh').classList.add('open');}
+function editAchat(id){const a=DB.achats.find(x=>x.id==id);if(!a)return;pops();document.getElementById('a-eid').value=a.id;document.getElementById('a-date').value=a.date;document.getElementById('a-type').value=a.tid;document.getElementById('a-four').value=a.fid;document.getElementById('a-qte').value=a.qte;document.getElementById('a-prix').value=a.prix||'';document.getElementById('a-mont').value=a.mont||'';document.getElementById('a-lot').value=a.lot||'';document.getElementById('mt-achat').textContent='Modifier l\'achat';document.getElementById('m-achat').classList.add('open');}
+function editMouv(id){const m=DB.mouvs.find(x=>x.id==id);if(!m)return;pops();document.getElementById('mv-eid').value=m.id;document.getElementById('mv-date').value=m.date;document.getElementById('mv-tm').value=m.tm;document.getElementById('mv-type').value=m.tid;document.getElementById('mv-qte').value=m.qte;document.getElementById('mv-veh').value=m.vid||'';document.getElementById('mv-svc').value=m.sid||'';document.getElementById('mv-just').value=m.just||'';document.getElementById('mv-mont').value=m.mont||'';document.getElementById('mt-mouv').textContent='Modifier le mouvement';document.getElementById('m-mouv').classList.add('open');}
+function editFrais(id){
+  const f=DB.frais.find(x=>x.id==id);if(!f)return;
+  const cat=f.cat;const pfx=FR_PFX[cat];pops();
+  document.getElementById(pfx+'-eid').value=f.id;
+  document.getElementById(pfx+'-date').value=f.date;
+  document.getElementById(pfx+'-num').value=f.num||'';
+  document.getElementById(pfx+'-des').value=f.des||'';
+  document.getElementById(pfx+'-qte').value=f.qte;
+  document.getElementById(pfx+'-mont').value=f.mont;
+  if(cat==='vtt'||cat==='vta'){
+    const vehEl=document.getElementById(pfx+'-veh');if(vehEl)vehEl.value=f.vid||'';
+  }else{
+    const svcEl=document.getElementById(pfx+'-svc');if(svcEl)svcEl.value=f.sid||'';
+  }
+  if(cat==='post'){
+    document.getElementById('po-dest').value=f.dest||'';
+    document.getElementById('po-tcourrier').value=f.tcourrier||'Lettre ordinaire';
+  }
+  document.getElementById('m-frais-'+cat).classList.add('open');
+}
+function editUser(id){const u=DB.users.find(x=>x.id==id);if(!u)return;document.getElementById('u-eid').value=u.id;document.getElementById('u-nc').value=u.nc;document.getElementById('u-lg').value=u.lg;document.getElementById('u-pw').value='';document.getElementById('u-rl').value=u.role;document.getElementById('u-ac').value=u.actif;document.getElementById('mt-user').textContent='Modifier utilisateur';om('m-user');}
+function editAlerte(id){const a=DB.alertes.find(x=>x.id==id);if(!a)return;pops();document.getElementById('al-eid').value=a.id;document.getElementById('al-type').value=a.tid;document.getElementById('al-seuil').value=a.seuil;document.getElementById('mt-alerte').textContent='Modifier l\'alerte';document.getElementById('m-alerte').classList.add('open');}
+
+// ═══════════════════════════════════════════════════
+//  DELETE (admin only)
+// ═══════════════════════════════════════════════════
+function del(table,id){
+  if(!isAdmin())return toast('Suppression réservée à l\'administrateur','err');
+  if(table==='users'&&id==CU.id)return toast('Impossible de supprimer votre propre compte','err');
+  if(table==='types'){
+    const stk=cStock(id);
+    if(!confirm(`Supprimer ce type supprimera aussi ses alertes associées${stk>0?' et son stock de '+stk+' unités':''}.  Continuer ?`))return;
+    DB.alertes=DB.alertes.filter(a=>a.tid!=id);
+    toast('Type et alertes associées supprimés','warn');
+  }else{if(!confirm('Supprimer cet enregistrement ?'))return;}
+  DB[table]=DB[table].filter(x=>x.id!=id);
+  save();log('Suppression',table+' #'+id);
+  rnd(document.querySelector('.nbtn.active')?.dataset.page||'dashboard');
+  if(table!=='types')toast('Supprimé ✓');
+}
+
+// ═══════════════════════════════════════════════════
+//  ALERTES
+// ═══════════════════════════════════════════════════
+function chkAl(){
+  DB.alertes.forEach(a=>{const d=cStock(a.tid);if(d<=a.seuil&&a.statut!=='Déclenché'){a.statut='Déclenché';a.da=new Date().toISOString();}else if(d>a.seuil){a.statut='Actif';a.da=null;}});
+  save();
+}
+
+// ═══════════════════════════════════════════════════
+//  FILTER
+// ═══════════════════════════════════════════════════
+function ft(tbody,search,attr,val){
+  document.querySelectorAll('#'+tbody+' tr[data-s]').forEach(r=>{
+    const ms=!search||r.dataset.s.toLowerCase().includes(search.toLowerCase());
+    const ma=!attr||!val||(r.dataset[attr]||'')==val;
+    r.style.display=ms&&ma?'':'none';
+  });
+}
+
+// ═══════════════════════════════════════════════════
+//  BADGES
+// ═══════════════════════════════════════════════════
+function badges(){
+  const m={'nb-s':DB.achats.length,'nb-m':DB.mouvs.length,'nb-v':DB.vehs.length,'nb-sv':DB.svcs.length,'nb-f':DB.fours.length,'nb-t':DB.types.length,'nb-u':DB.users.length,
+    'nb-eau':cStockCat('water'),'nb-elec':cStockCat('elec'),'nb-tele':cStockCat('tele'),'nb-post':cStockCat('post'),
+    'nb-vtt':cStockCat('vtt'),'nb-vta':cStockCat('vta')};
+  Object.entries(m).forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.textContent=v;});
+}
+
+// ═══════════════════════════════════════════════════
+//  STOCK CARDS
+// ═══════════════════════════════════════════════════
+function buildSC(cid){
+  const c=document.getElementById(cid);if(!c)return;
+  if(!DB.types.length){c.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="eic">📦</div><div class="et">Aucun type de vignette</div><div class="ed">Créez des types dans Référentiels → Types vignette</div></div>';return;}
+  const mx=Math.max(...DB.types.map(t=>cStock(t.id)),1);
+  c.innerHTML=DB.types.map(t=>{
+    const stk=cStock(t.id);const cat=t.cat||'other';const col=CAT_COLOR[cat]||'var(--gn)';
+    const al=DB.alertes.find(a=>a.tid==t.id&&a.statut==='Déclenché');
+    const pct=Math.min(100,Math.round((stk/mx)*100));
+    return`<div class="sc c${cat}">
+      ${al?'<div style="position:absolute;top:7px;right:9px;font-size:13px" title="⚠ Alerte stock">⚠️</div>':''}
+      <div class="sc-lbl">${t.nom}</div>
+      <div class="sc-val" style="color:${col}">${stk.toLocaleString()}</div>
+      <div class="sc-sub">${catB(cat)}</div>
+      <div class="sc-bar"><div class="sc-fill" style="width:${pct}%;background:${col}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════
+//  RENDERS
+// ═══════════════════════════════════════════════════
+function rdDash(){
+  const tot=DB.types.reduce((s,t)=>s+cStock(t.id),0);
+  const totQteAch=DB.achats.reduce((s,a)=>s+a.qte,0);
+  const totMont=DB.achats.reduce((s,a)=>s+(a.mont||0),0);
+  const eauQte=DB.types.filter(t=>t.cat==='water').reduce((s,t)=>s+DB.achats.filter(a=>a.tid==t.id).reduce((q,a)=>q+a.qte,0),0);
+  const eauMont=DB.types.filter(t=>t.cat==='water').reduce((s,t)=>s+DB.achats.filter(a=>a.tid==t.id).reduce((q,a)=>q+(a.mont||0),0),0);
+  const elecQte=DB.types.filter(t=>t.cat==='elec').reduce((s,t)=>s+DB.achats.filter(a=>a.tid==t.id).reduce((q,a)=>q+a.qte,0),0);
+  const elecMont=DB.types.filter(t=>t.cat==='elec').reduce((s,t)=>s+DB.achats.filter(a=>a.tid==t.id).reduce((q,a)=>q+(a.mont||0),0),0);
+  document.getElementById('k-tot').textContent=tot.toLocaleString();
+  document.getElementById('k-tc').textContent=DB.types.length+' types';
+  document.getElementById('k-tot-mont').textContent=totMont>0?fmtM(totMont):'';
+  document.getElementById('k-tot-qte').textContent=totQteAch>0?totQteAch.toLocaleString()+' achetées au total':'';
+  document.getElementById('k-eau').textContent=cStockCat('water').toLocaleString();
+  document.getElementById('k-eau-mont').textContent=eauMont>0?fmtM(eauMont):'';
+  document.getElementById('k-eau-qte').textContent=eauQte>0?eauQte.toLocaleString()+' achetées':'';
+  document.getElementById('k-elec').textContent=cStockCat('elec').toLocaleString();
+  document.getElementById('k-elec-mont').textContent=elecMont>0?fmtM(elecMont):'';
+  document.getElementById('k-elec-qte').textContent=elecQte>0?elecQte.toLocaleString()+' achetées':'';
+  document.getElementById('k-al').textContent=DB.alertes.filter(a=>a.statut==='Déclenché').length;
+  buildSC('dash-sc');
+  document.getElementById('d-mouv').innerHTML=DB.mouvs.slice(0,6).length
+    ?DB.mouvs.slice(0,6).map(m=>`<tr><td class="mono">${fmt(m.date)}</td><td>${tn(m.tid)}</td><td><strong>${m.qte}</strong></td><td>${mvB(m.tm)}</td></tr>`).join('')
+    :emptyR('Aucun mouvement',4);
+  document.getElementById('d-frais').innerHTML=DB.frais.slice(0,6).length
+    ?DB.frais.slice(0,6).map(f=>`<tr><td class="mono">${fmt(f.date)}</td><td class="mono">${f.num}</td><td class="mono">${fmtM(f.mont)}</td><td>${catB(FR_CAT_MAP[f.cat]||'other')}</td></tr>`).join('')
+    :emptyR('Aucun paiement',4);
+}
+
+function rdStock(){
+  buildSC('stock-sc');
+  // Totaux par type de vignette
+  const totEl=document.getElementById('stock-totaux');
+  if(totEl){
+    if(!DB.types.length){totEl.innerHTML='';
+    }else{
+      totEl.style.gridTemplateColumns='repeat(auto-fill,minmax(160px,1fr))';
+      totEl.innerHTML=DB.types.map(t=>{
+        const qte=DB.achats.filter(a=>a.tid==t.id).reduce((s,a)=>s+a.qte,0);
+        const mont=DB.achats.filter(a=>a.tid==t.id).reduce((s,a)=>s+(a.mont||0),0);
+        const col=CAT_COLOR[t.cat||'other']||'var(--gn)';
+        return`<div class="fstat">
+          <div class="fstat-val" style="color:${col};font-size:15px">${mont>0?fmtM(mont):'—'}</div>
+          <div class="fstat-lbl">${t.nom}</div>
+          <div style="font-size:12px;color:var(--mu2);margin-top:2px">${qte.toLocaleString()} achetée${qte!==1?'s':''}</div>
+        </div>`;
+      }).join('');
+    }
+  }
+  const fat=document.getElementById('fa-type');if(fat)fat.innerHTML='<option value="">Tous les types</option>'+DB.types.map(t=>`<option value="${t.id}">${t.nom}</option>`).join('');
+  document.getElementById('t-achats').innerHTML=DB.achats.length
+    ?DB.achats.map(a=>`<tr data-s="${tn(a.tid)} ${fn(a.fid)} ${a.lot||''}" data-tid="${a.tid}">
+      <td class="mono">${fmt(a.date)}</td>
+      <td><strong>${tn(a.tid)}</strong> ${catB(DB.types.find(t=>t.id==a.tid)?.cat||'other')}</td>
+      <td>${fn(a.fid)}</td><td><strong>${a.qte.toLocaleString()}</strong></td>
+      <td class="mono">${a.prix?fmtM(a.prix):'—'}</td>
+      <td class="mono">${fmtM(a.mont)}</td>
+      <td class="mono tm">${a.lot||'—'}</td>
+      <td class="tm">${un(a.uid)}</td>
+      <td>${actBtns('editAchat('+a.id+')','achats',a.id)}</td>
+    </tr>`).join('')
+    :emptyR('Aucun achat. Cliquez sur "+ Nouvel achat".',9);
+}
+
+function rdMouv(){
+  document.getElementById('t-mouvements').innerHTML=DB.mouvs.length
+    ?DB.mouvs.map(m=>`<tr data-s="${tn(m.tid)} ${m.tm} ${m.just||''}" data-tm="${m.tm}">
+      <td class="mono">${fmt(m.date)}</td><td>${mvB(m.tm)}</td><td>${tn(m.tid)}</td>
+      <td><strong>${m.qte}</strong></td>
+      <td class="tm">${m.vid?vn(m.vid):'—'}</td>
+      <td class="tm">${m.sid?sn(m.sid):'—'}</td>
+      <td class="mono">${m.rel!==undefined?m.rel.toLocaleString():'—'}</td>
+      <td>${actBtns('editMouv('+m.id+')','mouvs',m.id)}</td>
+    </tr>`).join('')
+    :emptyR('Aucun mouvement.',8);
+}
+
+function rdFrais(cat){
+  const catKey=FR_CAT_MAP[cat];
+  const stk=cStockCat(catKey);
+  const pays=DB.frais.filter(f=>f.cat===cat);
+  const tot=pays.reduce((s,f)=>s+(f.mont||0),0);
+  document.getElementById(cat+'-stk').textContent=stk.toLocaleString();
+  document.getElementById(cat+'-nb').textContent=pays.length;
+  document.getElementById(cat+'-mt').textContent=tot>0?fmtM(tot):'—';
+  const tbody=document.getElementById('t-'+cat);if(!tbody)return;
+  const isVehicle=cat==='vtt'||cat==='vta';
+  if(!pays.length){tbody.innerHTML=emptyR('Aucun enregistrement.',isVehicle?8:8);return;}
+  // Libellé colonne contextuelle
+  function ctxLabel(f){
+    if(isVehicle)return f.vid?vn(f.vid):'<span class="tm">—</span>';
+    if(cat==='tele'){const m={internet:'Internet',fixe:'Tél. fixe',mobile:'Tél. mobile',mixte:'Internet + Tél.','':'—',autre:'Autre'};return`<span class="badge bt">${m[f.sid||'']||f.sid||'—'}</span>`;}
+    return f.sid||'Administration générale';
+  }
+  tbody.innerHTML=pays.map(f=>{
+    const extraCols=cat==='post'
+      ?`<td class="tm">${f.dest||'—'}</td><td><span class="badge bp">${f.tcourrier||'—'}</span></td>`
+      :'';
+    return`<tr data-s="${f.num} ${f.des||''} ${f.dest||''}">
+      <td class="mono">${fmt(f.date)}</td>
+      <td class="mono"><strong>${f.num}</strong></td>
+      <td class="tm">${f.des||'—'}</td>
+      ${extraCols}
+      <td><span class="badge ${CAT_BADGE[catKey]||'bg'}">${f.qte} vignette${f.qte!==1?'s':''}</span></td>
+      <td class="mono">${fmtM(f.mont)}</td>
+      <td class="tm">${ctxLabel(f)}</td>
+      <td class="tm">${un(f.uid)}</td>
+      <td>${actBtns('editFrais('+f.id+')','frais',f.id)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function rdVeh(){
+  document.getElementById('t-veh').innerHTML=DB.vehs.length
+    ?DB.vehs.map(v=>`<tr data-s="${v.immat} ${v.marque||''} ${v.modele||''}">
+      <td><strong class="mono">${v.immat}</strong></td>
+      <td>${[v.marque,v.modele].filter(Boolean).join(' ')||'—'}</td>
+      <td>${v.carb?`<span class="badge bb">${v.carb}</span>`:'—'}</td>
+      <td class="mono tm">${fmt(v.dmis)}</td>
+      <td>${v.sid?sn(v.sid):'—'}</td>
+      <td>${actBtns('editVeh('+v.id+')','vehs',v.id)}</td>
+    </tr>`).join('')
+    :emptyR('Aucun véhicule.',6);
+}
+
+function rdSvc(){
+  document.getElementById('t-svc').innerHTML=DB.svcs.length
+    ?DB.svcs.map(s=>{const n=DB.vehs.filter(v=>v.sid==s.id).length;return`<tr>
+      <td><strong>${s.nom}</strong></td>
+      <td>${s.gerant||'<span class="tm">—</span>'}</td>
+      <td class="mono">${s.tel||'<span class="tm">—</span>'}</td>
+      <td class="tm">${s.desc||'—'}</td>
+      <td><span class="badge bb">${n} véhicule${n!==1?'s':''}</span></td>
+      <td>${actBtns('editSvc('+s.id+')','svcs',s.id)}</td>
+    </tr>`;}).join('')
+    :emptyR('Aucun service.',6);
+}
+
+function rdFour(){
+  document.getElementById('t-four').innerHTML=DB.fours.length
+    ?DB.fours.map(f=>`<tr>
+      <td><strong>${f.nom}</strong></td>
+      <td>${f.cont||'—'}</td>
+      <td class="mono">${f.tel||'—'}</td>
+      <td>${f.email?`<a href="mailto:${f.email}" style="color:var(--gn)">${f.email}</a>`:'—'}</td>
+      <td>${actBtns('editFour('+f.id+')','fours',f.id)}</td>
+    </tr>`).join('')
+    :emptyR('Aucun fournisseur.',5);
+}
+
+function rdTypes(){
+  document.getElementById('t-types').innerHTML=DB.types.length
+    ?DB.types.map(t=>{const stk=cStock(t.id);return`<tr>
+      <td><strong>${t.nom}</strong></td>
+      <td>${catB(t.cat||'other')}</td>
+      <td class="tm">${t.desc||'—'}</td>
+      <td><span class="badge ${stk>0?'bg':'br'}">${stk.toLocaleString()} unités</span></td>
+      <td>${actBtns('editType('+t.id+')','types',t.id)}</td>
+    </tr>`;}).join('')
+    :emptyR('Aucun type de vignette.',5);
+}
+
+function rdUsers(){
+  document.getElementById('t-users').innerHTML=DB.users.length
+    ?DB.users.map(u=>`<tr>
+      <td><strong>${u.nc}</strong></td><td class="mono">${u.lg}</td>
+      <td>${roleB(u.role)}</td>
+      <td><span class="badge ${u.actif?'bg':'br'}">${u.actif?'Actif':'Inactif'}</span></td>
+      <td class="mono tm">${fmt(u.last)}</td>
+      <td><div class="acts">
+        <button class="btn btn-e" onclick="editUser(${u.id})" title="Modifier">✏</button>
+        ${(isAdmin()&&u.id!==CU.id)?`<button class="btn btn-d" onclick="del('users',${u.id})" title="Supprimer">🗑</button>`:''}
+      </div></td>
+    </tr>`).join('')
+    :emptyR('Aucun utilisateur.',6);
+}
+
+function rdAlertes(){
+  chkAl();
+  document.getElementById('t-alertes').innerHTML=DB.alertes.length
+    ?DB.alertes.map(a=>{const d=cStock(a.tid);const trig=d<=a.seuil;return`<tr>
+      <td><strong>${tn(a.tid)}</strong></td>
+      <td class="mono">${a.seuil}</td>
+      <td class="mono">${d.toLocaleString()}</td>
+      <td><span class="badge ${trig?'br':'bg'}">${trig?'⚠ Déclenché':'OK'}</span></td>
+      <td class="mono tm">${a.da?fmt(a.da):'—'}</td>
+      <td>${actBtns('editAlerte('+a.id+')','alertes',a.id)}</td>
+    </tr>`;}).join('')
+    :emptyR('Aucune alerte configurée.',6);
+}
+
+function rdLogs(){
+  document.getElementById('t-logs').innerHTML=DB.logs.length
+    ?DB.logs.map(l=>`<tr data-s="${l.action} ${l.details||''}">
+      <td class="mono tm">${fmtDT(l.dt)}</td>
+      <td>${un(l.uid)}</td>
+      <td><span class="badge bb">${l.action}</span></td>
+      <td class="tm">${l.details||'—'}</td>
+    </tr>`).join('')
+    :emptyR('Aucune activité.',4);
+}
+function clearLogs(){if(!confirm('Vider le journal ?'))return;DB.logs=[];save();rdLogs();toast('Journal vidé ✓');}
+
+// ═══════════════════════════════════════════════════
+//  EXPORT / IMPORT JSON
+// ═══════════════════════════════════════════════════
+function exportData(){
+  const b=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(b);const a=document.createElement('a');
+  a.href=url;a.download='vignettes-'+new Date().toISOString().split('T')[0]+'.json';
+  a.click();URL.revokeObjectURL(url);toast('Export téléchargé ✓','info');
+}
+function importJSON(e){
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      const req=['users','types','svcs','fours','vehs','achats','mouvs','frais','alertes','logs'];
+      if(req.filter(k=>!(k in d)).length>4)return toast('Fichier invalide ou incompatible','err');
+      if(!confirm(`Importer ce fichier remplacera toutes les données actuelles.\n\nContenu :\n• ${d.users?.length||0} utilisateurs\n• ${d.vehs?.length||0} véhicules\n• ${d.achats?.length||0} achats\n• ${d.mouvs?.length||0} mouvements\n\nContinuer ?`))return;
+      const prev=DB.users;DB=Object.assign({},DB,d);
+      if(!d.users?.length)DB.users=prev;
+      save();log('Import JSON',file.name);
+      rnd(document.querySelector('.nbtn.active')?.dataset.page||'dashboard');
+      toast('Données restaurées depuis '+file.name+' ✓');
+      e.target.value='';
+    }catch(err){toast('Erreur JSON : '+err.message,'err');}
+  };
+  r.readAsText(file,'UTF-8');
+}
+
+// ═══════════════════════════════════════════════════
+//  IMPORT EXCEL / CSV
+// ═══════════════════════════════════════════════════
+function normH(s){return(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[\s_-]+/g,'');}
+function parseCSV(txt){
+  return txt.split(/\r?\n/).filter(l=>l.trim()).map(line=>{
+    const cols=[];let cur='',inQ=false;
+    for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'){inQ=!inQ;}else if((c===';'||c===',')&&!inQ){cols.push(cur.trim());cur='';}else cur+=c;}
+    cols.push(cur.trim());return cols;
+  });
+}
+function findCol(hdrs,aliases){for(const a of aliases){const i=hdrs.findIndex(h=>normH(h)===a);if(i>=0)return i;}return -1;}
+
+const IMPORT_MAPS={
+  veh:{immat:['immatriculation','immat'],marque:['marque'],modele:['modele','modèle'],carb:['carburant'],dmis:['datemiseenservice','dmis'],sid_name:['nomservice','service']},
+  svc:{nom:['nomservice','nom'],gerant:['gerant','gérant'],tel:['telephone','tel'],desc:['description']},
+  four:{nom:['nomfournisseur','nom'],cont:['contact'],tel:['telephone','tel'],email:['email']}
+};
+const IMPORT_TEMPLATES={
+  veh:'Immatriculation;Marque;Modele;Carburant;DateMiseEnService;NomService\nA-12345-B;Peugeot;208;Diesel;2022-01-15;Direction Technique\n',
+  svc:'NomService;Gerant;Telephone;Description\nDirection Régionale;Mohamed Alami;+212612345678;Service des transports\n',
+  four:'NomFournisseur;Contact;Telephone;Email\nSociété ABC;Ahmed Benali;+212661234567;contact@abc.ma\n'
+};
+function dlTemplate(ctx){
+  const blob=new Blob(['\uFEFF'+IMPORT_TEMPLATES[ctx]],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');
+  a.href=url;a.download='modele_'+ctx+'.csv';a.click();URL.revokeObjectURL(url);toast('Modèle téléchargé ✓');
+}
+function handleImport(e,ctx){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    let rows;
+    try{
+      if(file.name.endsWith('.xlsx')&&typeof XLSX!=='undefined'){
+        const wb=XLSX.read(ev.target.result,{type:'array'});
+        rows=parseCSV(XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]],{FS:';'}));
+      }else rows=parseCSV(ev.target.result);
+    }catch{rows=parseCSV(ev.target.result);}
+    if(rows.length<2)return toast('Fichier vide ou format non reconnu','err');
+    const hdrs=rows[0].map(h=>h.replace(/^["']|["']$/g,''));
+    const map=IMPORT_MAPS[ctx];const ci={};
+    Object.entries(map).forEach(([k,al])=>{ci[k]=findCol(hdrs,al);});
+    const parsed=rows.slice(1).filter(r=>r.some(c=>c.trim())).map(row=>{
+      const o={};Object.entries(ci).forEach(([k,i])=>{o[k]=i>=0?(row[i]||'').replace(/^["']|["']$/g,'').trim():'';});return o;
+    }).filter(o=>ctx==='veh'?o.immat:o.nom);
+    if(!parsed.length)return toast('Aucune ligne valide trouvée. Vérifiez le format des colonnes.','err');
+    if(!confirm(`Importer ${parsed.length} enregistrement${parsed.length>1?'s':''} dans ${ctx}?`))return;
+    let added=0,skipped=0;
+    parsed.forEach(o=>{
+      if(ctx==='veh'){if(DB.vehs.find(v=>v.immat===o.immat)){skipped++;return;}let sid='';if(o.sid_name){const sv=DB.svcs.find(s=>s.nom.toLowerCase()===o.sid_name.toLowerCase());if(sv)sid=sv.id;}DB.vehs.push({id:nid('vehs'),immat:o.immat,marque:o.marque,modele:o.modele,carb:o.carb,dmis:o.dmis,sid});added++;}
+      if(ctx==='svc'){if(DB.svcs.find(s=>s.nom.toLowerCase()===o.nom.toLowerCase())){skipped++;return;}DB.svcs.push({id:nid('svcs'),nom:o.nom,gerant:o.gerant,tel:o.tel,desc:o.desc});added++;}
+      if(ctx==='four'){if(DB.fours.find(f=>f.nom.toLowerCase()===o.nom.toLowerCase())){skipped++;return;}DB.fours.push({id:nid('fours'),nom:o.nom,cont:o.cont,tel:o.tel,email:o.email});added++;}
+    });
+    save();log('Import Excel '+ctx,`${added} ajouté(s), ${skipped} ignoré(s)`);
+    const pg={veh:'vehicules',svc:'services',four:'fournisseurs'};rnd(pg[ctx]);
+    toast(`Import : ${added} ajouté${added>1?'s':''}, ${skipped} ignoré${skipped>1?'s':''}`,(added===0)?'warn':'ok');
+    e.target.value='';
+  };
+  file.name.endsWith('.xlsx')?reader.readAsArrayBuffer(file):reader.readAsText(file,'UTF-8');
+}
+// Load SheetJS
+(function(){const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';document.head.appendChild(s);})();
+
+// ═══════════════════════════════════════════════════
+//  SUPABASE SYNC
+// ═══════════════════════════════════════════════════
+const SC={url:'',key:'',tbl:'vignette_data',row:'main'};
+let _supaOn=false,_spT=null;
+function supaH(){return{'Content-Type':'application/json','apikey':SC.key,'Authorization':'Bearer '+SC.key,'Prefer':'return=minimal'};}
+function supaOn(){return _supaOn&&SC.url&&SC.key;}
+function pill(msg,t){
+  const el=document.getElementById('sync-pill');if(!el)return;
+  const s={ok:'background:var(--gnl);color:var(--gn);border:1px solid rgba(26,92,46,.2)',err:'background:var(--rdl);color:var(--rd);border:1px solid rgba(196,70,10,.2)',sync:'background:var(--bll);color:var(--bl);border:1px solid rgba(30,58,138,.2)',warn:'background:var(--aml);color:var(--am);border:1px solid rgba(146,64,14,.2)'};
+  el.style.cssText=(s[t]||s.ok)+';display:block;font-size:11px;padding:4px 10px;border-radius:6px;font-weight:500;font-family:var(--mono)';el.textContent=msg;
+}
+async function supaPush(){
+  if(!supaOn())return;
+  try{pill('↑ sync…','sync');
+    const p={id:SC.row,data:JSON.stringify(DB),updated_at:new Date().toISOString()};
+    const u=SC.url+'/rest/v1/'+SC.tbl+'?id=eq.'+SC.row;
+    const r=await fetch(u,{method:'PATCH',headers:supaH(),body:JSON.stringify(p)});
+    if(r.status===404||r.status===0)await fetch(SC.url+'/rest/v1/'+SC.tbl,{method:'POST',headers:supaH(),body:JSON.stringify(p)});
+    pill('✓ synchronisé','ok');
+  }catch{pill('⚠ sync échouée','err');}
+}
+async function supaPull(){
+  if(!supaOn())return false;
+  try{pill('↓ chargement…','sync');
+    const r=await fetch(SC.url+'/rest/v1/'+SC.tbl+'?id=eq.'+SC.row,{headers:supaH()});
+    if(!r.ok)throw new Error(r.status);
+    const rows=await r.json();
+    if(!rows?.length){pill('vide','warn');return false;}
+    const rem=JSON.parse(rows[0].data);if(!rem?.users)throw new Error('données invalides');
+    DB=Object.assign({},DB,rem);
+    try{localStorage.setItem('vmDB5',JSON.stringify(DB));}catch(e){}
+    pill('✓ données chargées','ok');return true;
+  }catch{pill('⚠ erreur','err');return false;}
+}
+function openSupaConfig(){document.getElementById('supa-url').value=SC.url||'';document.getElementById('supa-key').value=SC.key||'';document.getElementById('supa-st').textContent='';document.getElementById('m-supa').classList.add('open');}
+async function saveSupaCfg(){
+  const url=document.getElementById('supa-url').value.trim().replace(/\/$/,'');
+  const key=document.getElementById('supa-key').value.trim();
+  const st=document.getElementById('supa-st');
+  if(!url||!key){st.textContent='⚠ URL et clé obligatoires';st.style.color='var(--rd)';return;}
+  st.textContent='Test…';st.style.color='var(--bl)';SC.url=url;SC.key=key;
+  try{localStorage.setItem('vmSC',JSON.stringify({url,key}));}catch(e){}
+  try{
+    const r=await fetch(url+'/rest/v1/'+SC.tbl+'?limit=1',{headers:supaH()});
+    if(!r.ok)throw new Error(r.status+' — vérifiez l\'URL et la clé');
+    _supaOn=true;st.textContent='✓ Connexion réussie !';st.style.color='var(--gn)';
+    const pulled=await supaPull();
+    if(pulled){rnd(document.querySelector('.nbtn.active')?.dataset.page||'dashboard');}
+    setTimeout(()=>cm('m-supa'),1200);
+  }catch(err){st.textContent='✗ '+err.message;st.style.color='var(--rd)';_supaOn=false;}
+}
+async function manualSync(){
+  if(!supaOn())return openSupaConfig();
+  const p=await supaPull();if(p){rnd(document.querySelector('.nbtn.active')?.dataset.page||'dashboard');}
+}
+function loadSupaCfg(){
+  try{const c=JSON.parse(localStorage.getItem('vmSC'));if(c?.url&&c?.key){SC.url=c.url;SC.key=c.key;_supaOn=true;supaPull().then(p=>{if(p)rnd(document.querySelector('.nbtn.active')?.dataset.page||'dashboard');});}}catch(e){}
+}
+
+
+// ═══════════════════════════════════════════════════
+//  RAPPORTS
+// ═══════════════════════════════════════════════════
+function getRapportFilter(){
+  const per=document.getElementById('rp-per')?.value||'all';
+  const tid=document.getElementById('rp-type')?.value||'';
+  const cat=document.getElementById('rp-cat')?.value||'';
+  const now=new Date();
+  function inP(d){
+    const dt=new Date(d);
+    if(per==='month')return dt.getMonth()===now.getMonth()&&dt.getFullYear()===now.getFullYear();
+    if(per==='3m'){const d3=new Date(now);d3.setMonth(d3.getMonth()-3);return dt>=d3;}
+    if(per==='year')return dt.getFullYear()===now.getFullYear();
+    return true;
+  }
+  return{inP,tid,cat};
+}
+
+function rdRapports(){
+  const rpt=document.getElementById('rp-type');
+  if(rpt)rpt.innerHTML='<option value="">Tous</option>'+DB.types.map(t=>`<option value="${t.id}">${t.nom}</option>`).join('');
+  const {inP,tid,cat}=getRapportFilter();
+  // ── Achats ──
+  let typesF=DB.types.filter(t=>(tid?t.id==tid:true)&&(cat?t.cat===cat:true));
+  const totAQ=typesF.reduce((s,t)=>s+DB.achats.filter(a=>a.tid==t.id&&inP(a.date)).reduce((q,a)=>q+a.qte,0),0);
+  const totAM=typesF.reduce((s,t)=>s+DB.achats.filter(a=>a.tid==t.id&&inP(a.date)).reduce((q,a)=>q+(a.mont||0),0),0);
+  document.getElementById('rp-b-achats').innerHTML=typesF.length
+    ?typesF.map(t=>{
+      const rows=DB.achats.filter(a=>a.tid==t.id&&inP(a.date));
+      const qte=rows.reduce((s,a)=>s+a.qte,0);const mont=rows.reduce((s,a)=>s+(a.mont||0),0);
+      return`<tr><td><strong>${t.nom}</strong></td><td>${catB(t.cat||'other')}</td><td class="mono">${qte.toLocaleString()}</td><td class="mono">${mont>0?fmtM(mont):'—'}</td><td><span class="badge ${cStock(t.id)>0?'bg':'br'}">${cStock(t.id).toLocaleString()}</span></td></tr>`;
+    }).join('')+`<tr style="background:var(--sf2);font-weight:600"><td>Total</td><td></td><td class="mono">${totAQ.toLocaleString()}</td><td class="mono">${fmtM(totAM)}</td><td></td></tr>`
+    :emptyR('Aucun achat.',5);
+  // ── Mouvements ──
+  let mouvF=DB.mouvs.filter(m=>inP(m.date)&&(tid?m.tid==tid:true));
+  if(cat)mouvF=mouvF.filter(m=>{const t=DB.types.find(x=>x.id==m.tid);return t&&t.cat===cat;});
+  document.getElementById('rp-b-mouvements').innerHTML=mouvF.length
+    ?mouvF.map(m=>`<tr><td class="mono">${fmt(m.date)}</td><td>${mvB(m.tm)}</td><td>${tn(m.tid)}</td><td><strong>${m.qte}</strong></td><td class="tm">${m.vid?vn(m.vid):'—'}</td><td class="mono">${m.mont?fmtM(m.mont):'—'}</td><td class="mono">${m.rel!==undefined?m.rel.toLocaleString():'—'}</td></tr>`).join('')
+    :emptyR('Aucun mouvement.',7);
+  // ── Frais ──
+  let fraisF=DB.frais.filter(f=>inP(f.date));
+  if(tid)fraisF=fraisF.filter(f=>f.tid==tid);
+  if(cat)fraisF=fraisF.filter(f=>(FR_CAT_MAP[f.cat]===cat)||(f.catKey===cat));
+  const totFM=fraisF.reduce((s,f)=>s+(f.mont||0),0);
+  document.getElementById('rp-b-frais').innerHTML=fraisF.length
+    ?fraisF.map(f=>`<tr><td class="mono">${fmt(f.date)}</td><td>${catB(FR_CAT_MAP[f.cat]||f.catKey||'other')}</td><td class="mono">${f.num||'—'}</td><td class="tm">${f.des||'—'}</td><td><span class="badge ${CAT_BADGE[FR_CAT_MAP[f.cat]]||'bg'}">${f.qte}</span></td><td class="mono">${fmtM(f.mont)}</td></tr>`).join('')
+      +`<tr style="background:var(--sf2);font-weight:600"><td colspan="5">Total</td><td class="mono">${fmtM(totFM)}</td></tr>`
+    :emptyR('Aucun frais.',6);
+  // ── Logs ──
+  const logsF=DB.logs.filter(l=>inP(l.dt));
+  document.getElementById('rp-b-logs').innerHTML=logsF.length
+    ?logsF.map(l=>`<tr><td class="mono tm">${fmtDT(l.dt)}</td><td>${un(l.uid)}</td><td><span class="badge bb">${l.action}</span></td><td class="tm">${l.details||'—'}</td></tr>`).join('')
+    :emptyR('Aucune activité.',4);
+}
+
+function exportRapportXLSX(type){
+  let headers=[],rows=[];
+  const {inP,tid,cat}=getRapportFilter();
+  if(type==='achats'){
+    headers=['Type vignette','Catégorie','Qté achetée','Montant total (MAD)','Stock actuel'];
+    DB.types.filter(t=>(tid?t.id==tid:true)&&(cat?t.cat===cat:true)).forEach(t=>{
+      const r=DB.achats.filter(a=>a.tid==t.id&&inP(a.date));
+      rows.push([t.nom,CAT_LABEL[t.cat||'other']||t.cat,r.reduce((s,a)=>s+a.qte,0),r.reduce((s,a)=>s+(a.mont||0),0).toFixed(2),cStock(t.id)]);
+    });
+  }else if(type==='mouvements'){
+    headers=['Date','Type mouvement','Vignette','Quantité','Véhicule','Montant (MAD)','Reliquat'];
+    let mF=DB.mouvs.filter(m=>inP(m.date)&&(tid?m.tid==tid:true));
+    if(cat)mF=mF.filter(m=>{const t=DB.types.find(x=>x.id==m.tid);return t&&t.cat===cat;});
+    rows=mF.map(m=>[fmt(m.date),m.tm,tn(m.tid),m.qte,m.vid?vn(m.vid):'',m.mont||0,m.rel??'']);
+  }else if(type==='frais'){
+    headers=['Date','Catégorie','Référence','Désignation','Vignettes','Montant (MAD)'];
+    let fF=DB.frais.filter(f=>inP(f.date));
+    if(tid)fF=fF.filter(f=>f.tid==tid);
+    rows=fF.map(f=>[fmt(f.date),CAT_LABEL[FR_CAT_MAP[f.cat]]||f.cat,f.num,f.des||'',f.qte,(f.mont||0).toFixed(2)]);
+  }else if(type==='logs'){
+    headers=['Date/Heure','Utilisateur','Action','Détails'];
+    rows=DB.logs.filter(l=>inP(l.dt)).map(l=>[fmtDT(l.dt),un(l.uid),l.action,l.details||'']);
+  }
+  const sep=';';
+  const csv='\uFEFF'+[headers,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(sep)).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');
+  a.href=url;a.download=`rapport_${type}_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();URL.revokeObjectURL(url);
+  toast('Export Excel (.csv) téléchargé ✓','info');log('Export Excel',type);
+}
+
+function exportRapportPDF(type){
+  const titlesMap={achats:'Stock & Achats',mouvements:'Mouvements',frais:'Frais généraux',logs:"Journal d'activité"};
+  const table=document.getElementById('rp-t-'+type);if(!table)return;
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Rapport — ${titlesMap[type]||type}</title>
+  <style>body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#111;margin:20px}
+  h2{font-size:16px;margin-bottom:4px}.sub{font-size:11px;color:#666;margin-bottom:14px}
+  table{width:100%;border-collapse:collapse}
+  th{background:#1a5c2e;color:#fff;padding:7px 10px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+  td{padding:6px 10px;border-bottom:1px solid #e5e5e5;font-size:12px}tr:nth-child(even) td{background:#f7f7f7}
+  @media print{body{margin:8mm}}</style></head><body>
+  <h2>VignetteManager — ${titlesMap[type]||type}</h2>
+  <div class="sub">Généré le ${new Date().toLocaleString('fr-FR')} — ${CU?.nc||'—'}</div>
+  ${table.outerHTML}
+  <script>window.onload=()=>window.print()<\/script></body></html>`);
+  win.document.close();log('Export PDF',type);
+}
+
+// ═══════════════════════════════════════════════════
+//  PERMISSIONS (Rôles & Accès)
+// ═══════════════════════════════════════════════════
+function rdPerms(){
+  const roles=['admin','manager','agent'];
+  const roleLabels={admin:'👑 Administrateur',manager:'🔧 Gestionnaire',agent:'👤 Agent'};
+  const roleBg={admin:'var(--rdl)',manager:'var(--bll)',agent:'var(--gnl)'};
+  const grid=document.getElementById('perm-grid');if(!grid)return;
+  grid.innerHTML=roles.map(role=>{
+    const perms=DB.rolePerms?.[role]||[];
+    const isAdminRole=role==='admin';
+    return`<div class="fc">
+      <div class="ch" style="background:${roleBg[role]}">
+        <div class="ct">${roleLabels[role]}</div>
+        ${isAdminRole?'<span style="font-size:11px;color:var(--mu)">Accès complet (non modifiable)</span>':''}
+      </div>
+      <div style="padding:12px 14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:7px">
+        ${ALL_PAGES.map(p=>{
+          const checked=perms.includes(p.id)||isAdminRole;
+          return`<label style="display:flex;align-items:center;gap:7px;padding:7px 10px;background:var(--sf2);border-radius:6px;cursor:${isAdminRole?'default':'pointer'};border:1px solid ${checked&&!isAdminRole?'rgba(26,92,46,.3)':'var(--bd)'}">
+            <input type="checkbox" data-role="${role}" data-page="${p.id}" ${checked?'checked':''} ${isAdminRole?'disabled':''}
+              style="width:14px;height:14px;accent-color:var(--gn)">
+            <span style="font-size:12px">${p.ic} ${p.label}</span>
+          </label>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function savePerms(){
+  if(!DB.rolePerms)DB.rolePerms={};
+  ['manager','agent'].forEach(role=>{
+    const boxes=document.querySelectorAll(`input[data-role="${role}"]`);
+    DB.rolePerms[role]=Array.from(boxes).filter(b=>b.checked).map(b=>b.dataset.page);
+    if(!DB.rolePerms[role].includes('dashboard'))DB.rolePerms[role].unshift('dashboard');
+  });
+  save();applyNavPerms();
+  log('Modification permissions','Rôles manager et agent mis à jour');
+  toast('Permissions enregistrées ✓');
+}
+
+// ═══════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════
+load();
+loadSupaCfg();
 </script>
 </body>
 </html>

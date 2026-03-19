@@ -787,17 +787,46 @@ body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px
 </div></div>
 
 <!-- Supabase -->
-<div class="ov" id="m-supa"><div class="modal" style="max-width:520px">
+<div class="ov" id="m-supa"><div class="modal" style="max-width:560px">
   <div class="mh"><div class="mt">☁ Synchronisation cloud — Supabase</div><button class="xb" onclick="cm('m-supa')">×</button></div>
   <div class="mb">
-    <div style="background:var(--bll);border:1px solid rgba(30,58,138,.15);border-radius:8px;padding:12px;font-size:12px;color:var(--bl);margin-bottom:13px;line-height:1.9">
-      <strong>Configuration en 4 étapes</strong><br>
+    <div style="background:var(--bll);border:1px solid rgba(30,58,138,.15);border-radius:8px;padding:12px;font-size:12px;color:var(--bl);margin-bottom:13px;line-height:2">
+      <strong>Configuration en 3 étapes</strong><br>
       1. Compte gratuit sur <a href="https://supabase.com" target="_blank" style="color:var(--bl);font-weight:600">supabase.com</a> → nouveau projet<br>
-      2. <strong>SQL Editor</strong> → exécuter :<br>
-      <code style="display:block;margin:5px 0;background:rgba(30,58,138,.1);padding:7px;border-radius:5px;font-family:var(--mono);font-size:11px">CREATE TABLE vignette_data (id TEXT PRIMARY KEY, data TEXT, updated_at TIMESTAMPTZ);
+      2. <strong>SQL Editor</strong> → copier-coller et exécuter ce script :<br>
+      <code style="display:block;margin:6px 0 2px;background:rgba(30,58,138,.08);padding:9px 10px;border-radius:5px;font-family:var(--mono);font-size:10.5px;line-height:1.7;white-space:pre">-- Créer la table
+CREATE TABLE IF NOT EXISTS vignette_data (
+  id TEXT PRIMARY KEY,
+  data TEXT NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Activer RLS
 ALTER TABLE vignette_data ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "anon_all" ON vignette_data FOR ALL TO anon USING (true) WITH CHECK (true);</code>
-      3. <em>Project Settings → API</em> → copier URL + clé anon public
+
+-- Lecture : uniquement la ligne 'main'
+CREATE POLICY "read_main" ON vignette_data
+  FOR SELECT TO anon
+  USING (id = 'main');
+
+-- Insertion : uniquement la ligne 'main'
+CREATE POLICY "insert_main" ON vignette_data
+  FOR INSERT TO anon
+  WITH CHECK (id = 'main');
+
+-- Mise à jour : uniquement la ligne 'main'
+CREATE POLICY "update_main" ON vignette_data
+  FOR UPDATE TO anon
+  USING (id = 'main')
+  WITH CHECK (id = 'main');
+</code>
+      <span style="color:var(--rd);font-weight:600">⚠ Ne jamais créer de politique DELETE — les données ne peuvent pas être supprimées de l'extérieur.</span><br>
+      3. <em>Project Settings → API</em> → copier l'<strong>URL</strong> et la clé <strong>anon public</strong>
+    </div>
+    <div style="background:var(--aml);border:1px solid rgba(146,64,14,.2);border-radius:6px;padding:9px 12px;font-size:11px;color:var(--am);margin-bottom:13px">
+      <strong>Si vous aviez déjà l'ancienne politique</strong> — supprimez-la d'abord dans Supabase :<br>
+      <code style="font-family:var(--mono);font-size:10.5px">DROP POLICY IF EXISTS "anon_all" ON vignette_data;</code><br>
+      Puis exécutez le script ci-dessus.
     </div>
     <div class="fg"><label class="fl">URL du projet *</label><input class="fi" type="url" id="supa-url" placeholder="https://xxxx.supabase.co"></div>
     <div class="fg"><label class="fl">Clé publique anon *</label><input class="fi" type="text" id="supa-key" style="font-size:11px" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9…"></div>
@@ -835,8 +864,10 @@ function invalidateCache(){_stockCache={};}
 
 function save(){
   invalidateCache();
+  DB._updatedAt=new Date().toISOString();
   try{
     localStorage.setItem('vmDB5',JSON.stringify(DB));
+    localStorage.setItem('vmDB5_ts',DB._updatedAt);
   }catch(e){
     if(e.name==='QuotaExceededError'||e.code===22||e.code===1014){
       toast('⚠ Stockage local plein ! Exportez vos données puis purgez les anciens logs.','err');
@@ -1753,63 +1784,108 @@ function pill(msg,t){
 }
 async function supaPush(){
   if(!supaOn())return;
-  try{pill('↑ sync…','sync');
-    const p={id:SC.row,data:JSON.stringify(DB),updated_at:new Date().toISOString()};
-    const u=SC.url+'/rest/v1/'+SC.tbl+'?id=eq.'+SC.row;
-    const r=await fetch(u,{method:'PATCH',headers:supaH(),body:JSON.stringify(p)});
-    if(r.status===404||r.status===0)await fetch(SC.url+'/rest/v1/'+SC.tbl,{method:'POST',headers:supaH(),body:JSON.stringify(p)});
+  try{
+    pill('↑ envoi…','sync');
+    DB._updatedAt=new Date().toISOString();
+    const payload={id:SC.row,data:JSON.stringify(DB),updated_at:DB._updatedAt};
+    const rPatch=await fetch(SC.url+'/rest/v1/'+SC.tbl+'?id=eq.'+SC.row,{
+      method:'PATCH',headers:{...supaH(),'Prefer':'return=minimal'},
+      body:JSON.stringify({data:payload.data,updated_at:payload.updated_at})
+    });
+    if(rPatch.ok){pill('✓ synchronisé','ok');return;}
+    const rPost=await fetch(SC.url+'/rest/v1/'+SC.tbl,{
+      method:'POST',headers:{...supaH(),'Prefer':'return=minimal'},
+      body:JSON.stringify(payload)
+    });
+    if(!rPost.ok)throw new Error('Push échoué : '+rPost.status);
     pill('✓ synchronisé','ok');
-  }catch{pill('⚠ sync échouée','err');}
+  }catch(err){pill('⚠ sync échouée','err');console.warn('Supabase push:',err);}
 }
+
 async function supaPull(){
   if(!supaOn())return false;
   try{
-    pill('↓ chargement…','sync');
+    pill('↓ vérification…','sync');
     const r=await fetch(SC.url+'/rest/v1/'+SC.tbl+'?id=eq.'+SC.row,{headers:supaH()});
     if(!r.ok)throw new Error(r.status);
     const rows=await r.json();
-    if(!rows?.length){pill('aucune donnée distante','warn');return false;}
-    const rem=JSON.parse(rows[0].data);
-    // Validation stricte : les données distantes doivent être complètes
-    if(!rem?.users?.length)throw new Error('données distantes invalides ou vides');
-    // Fusionner : prendre Supabase comme référence mais conserver rolePerms local si absent
+
+    // Rien dans Supabase ou données vides → pousser le local
+    if(!rows?.length){await supaPush();return false;}
+    let rem;
+    try{rem=JSON.parse(rows[0].data);}catch{await supaPush();return false;}
+    if(!rem?.users?.length){await supaPush();return false;}
+
+    // Comparer les timestamps
+    const remTs=new Date(rows[0].updated_at||0).getTime();
+    const locTs=new Date(DB._updatedAt||localStorage.getItem('vmDB5_ts')||0).getTime();
+
+    if(remTs<=locTs){
+      // Local plus récent → pousser vers Supabase sans toucher aux données locales
+      await supaPush();
+      return false;
+    }
+
+    // Supabase plus récent → charger les données distantes
     const localPerms=DB.rolePerms;
     DB=Object.assign({},rem);
     if(!DB.rolePerms&&localPerms)DB.rolePerms=localPerms;
-    // S'assurer que rolePerms existe toujours
     if(!DB.rolePerms)DB.rolePerms={
       admin:['dashboard','stock','mouvements','eau','elec','tele','post','vtt','vta','vehicules','services','fournisseurs','types','utilisateurs','alertes','logs','rapports'],
       manager:['dashboard','stock','mouvements','eau','elec','tele','post','vtt','vta','vehicules','services','fournisseurs','types','alertes','rapports'],
       agent:['dashboard','mouvements','alertes']
     };
-    try{localStorage.setItem('vmDB5',JSON.stringify(DB));}catch(e){}
-    pill('✓ synchronisé','ok');return true;
+    try{
+      localStorage.setItem('vmDB5',JSON.stringify(DB));
+      localStorage.setItem('vmDB5_ts',rows[0].updated_at||new Date().toISOString());
+    }catch(e){}
+    pill('✓ données cloud chargées','ok');
+    return true;
   }catch(err){pill('⚠ '+err.message,'err');return false;}
 }
-function openSupaConfig(){document.getElementById('supa-url').value=SC.url||'';document.getElementById('supa-key').value=SC.key||'';document.getElementById('supa-st').textContent='';document.getElementById('m-supa').classList.add('open');}
+
+function openSupaConfig(){
+  document.getElementById('supa-url').value=SC.url||'';
+  document.getElementById('supa-key').value=SC.key||'';
+  document.getElementById('supa-st').textContent='';
+  document.getElementById('m-supa').classList.add('open');
+}
+
 async function saveSupaCfg(){
   const url=document.getElementById('supa-url').value.trim().replace(/\/$/,'');
   const key=document.getElementById('supa-key').value.trim();
   const st=document.getElementById('supa-st');
   if(!url||!key){st.textContent='⚠ URL et clé obligatoires';st.style.color='var(--rd)';return;}
-  st.textContent='Test…';st.style.color='var(--bl)';SC.url=url;SC.key=key;
+  st.textContent='Test de connexion…';st.style.color='var(--bl)';
+  SC.url=url;SC.key=key;
   try{localStorage.setItem('vmSC',JSON.stringify({url,key}));}catch(e){}
   try{
     const r=await fetch(url+'/rest/v1/'+SC.tbl+'?limit=1',{headers:supaH()});
     if(!r.ok)throw new Error(r.status+' — vérifiez l\'URL et la clé');
-    _supaOn=true;st.textContent='✓ Connexion réussie !';st.style.color='var(--gn)';
-    const pulled=await supaPull();
-    if(pulled){rnd(document.querySelector('.nbtn.active')?.dataset.page||'dashboard');}
-    setTimeout(()=>cm('m-supa'),1200);
+    _supaOn=true;
+    st.textContent='✓ Connexion réussie ! Envoi des données locales…';st.style.color='var(--gn)';
+    // À la configuration initiale : toujours pousser le local vers Supabase
+    // pour ne jamais écraser les données déjà saisies
+    await supaPush();
+    st.textContent='✓ Données envoyées vers le cloud ✓';
+    setTimeout(()=>cm('m-supa'),1500);
   }catch(err){st.textContent='✗ '+err.message;st.style.color='var(--rd)';_supaOn=false;}
 }
+
 async function manualSync(){
   if(!supaOn())return openSupaConfig();
-  const p=await supaPull();if(p){rnd(document.querySelector('.nbtn.active')?.dataset.page||'dashboard');}
+  // Sync manuelle : comparer et prendre le plus récent
+  const pulled=await supaPull();
+  if(pulled){
+    const active=document.querySelector('.nbtn.active');
+    rnd(active?.dataset.page||'dashboard');
+    toast('Données cloud chargées ✓');
+  }else{
+    toast('Données locales envoyées vers le cloud ✓');
+  }
 }
+
 function loadSupaCfg(){
-  // Charger uniquement les clés de connexion au démarrage
-  // Le pull réel se fait dans startApp(), après login
   try{
     const c=JSON.parse(localStorage.getItem('vmSC'));
     if(c?.url&&c?.key){SC.url=c.url;SC.key=c.key;_supaOn=true;}

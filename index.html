@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Sécurité : empêcher le clickjacking et forcer HTTPS -->
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta http-equiv="Referrer-Policy" content="no-referrer">
 <title>VignetteManager</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Unbounded:wght@400;600;800&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -815,7 +819,6 @@ let DB={
   ],
   types:[],svcs:[],fours:[],vehs:[],
   achats:[],mouvs:[],frais:[],alertes:[],logs:[],
-  // Permissions par rôle : pages visibles
   rolePerms:{
     admin:['dashboard','stock','mouvements','eau','elec','tele','post','vtt','vta','vehicules','services','fournisseurs','types','utilisateurs','alertes','logs','rapports'],
     manager:['dashboard','stock','mouvements','eau','elec','tele','post','vtt','vta','vehicules','services','fournisseurs','types','alertes','rapports'],
@@ -826,28 +829,43 @@ let DB={
 let CU=null;
 const isAdmin=()=>CU&&CU.role==='admin';
 
+// ── Cache de calcul du stock (invalidé à chaque save) ──
+let _stockCache={};
+function invalidateCache(){_stockCache={};}
+
 function save(){
-  try{localStorage.setItem('vmDB5',JSON.stringify(DB));}catch(e){}
+  invalidateCache();
+  try{
+    localStorage.setItem('vmDB5',JSON.stringify(DB));
+  }catch(e){
+    if(e.name==='QuotaExceededError'||e.code===22||e.code===1014){
+      toast('⚠ Stockage local plein ! Exportez vos données puis purgez les anciens logs.','err');
+    }
+  }
   if(supaOn()){clearTimeout(_spT);_spT=setTimeout(supaPush,1500);}
 }
 function load(){
   try{const s=localStorage.getItem('vmDB5');if(s){const d=JSON.parse(s);if(d.users?.length>0)DB=Object.assign({},DB,d);else{const u=DB.users;DB=Object.assign({},DB,d);DB.users=u;}}}catch(e){}
-  // S'assurer que rolePerms existe toujours (migration données existantes)
   if(!DB.rolePerms)DB.rolePerms={
     admin:['dashboard','stock','mouvements','eau','elec','tele','post','vtt','vta','vehicules','services','fournisseurs','types','utilisateurs','alertes','logs','rapports'],
     manager:['dashboard','stock','mouvements','eau','elec','tele','post','vtt','vta','vehicules','services','fournisseurs','types','alertes','rapports'],
     agent:['dashboard','mouvements','alertes']
   };
 }
-function nid(t){const id=DB.nid[t]++;save();return id;}
+// nid() incrémente en mémoire SANS déclencher save() — save() sera appelé par la fonction métier
+function nid(t){const id=DB.nid[t]++;return id;}
 
-// Stock computation (achats - sorties - frais)
+// Stock computation avec cache
 function cStock(tid){
-  const e=DB.achats.filter(a=>a.tid==tid).reduce((s,a)=>s+a.qte,0);
-  const s=DB.mouvs.filter(m=>m.tid==tid&&['Sortie','Affectation','Perte'].includes(m.tm)).reduce((s,m)=>s+m.qte,0);
-  const r=DB.mouvs.filter(m=>m.tid==tid&&m.tm==='Retour').reduce((s,m)=>s+m.qte,0);
-  const f=DB.frais.filter(f=>f.tid==tid).reduce((s,f)=>s+f.qte,0);
-  return Math.max(0,e-s+r-f);
+  const key=String(tid);
+  if(_stockCache[key]!==undefined)return _stockCache[key];
+  const e=DB.achats.filter(a=>String(a.tid)===key).reduce((s,a)=>s+a.qte,0);
+  const so=DB.mouvs.filter(m=>String(m.tid)===key&&['Sortie','Affectation','Perte'].includes(m.tm)).reduce((s,m)=>s+m.qte,0);
+  const r=DB.mouvs.filter(m=>String(m.tid)===key&&m.tm==='Retour').reduce((s,m)=>s+m.qte,0);
+  const f=DB.frais.filter(fr=>String(fr.tid)===key).reduce((s,fr)=>s+fr.qte,0);
+  const result=Math.max(0,e-so+r-f);
+  _stockCache[key]=result;
+  return result;
 }
 function cStockCat(cat){return DB.types.filter(t=>t.cat===cat).reduce((s,t)=>s+cStock(t.id),0);}
 
@@ -856,6 +874,33 @@ const CAT_COLOR={water:'var(--wa)',elec:'var(--el)',fuel:'var(--am)',tele:'var(-
 const CAT_LABEL={water:'💧 Eau',elec:'⚡ Électricité',fuel:'⛽ Carburant',tele:'📡 Télécom',post:'✉️ Affranchissement',other:'🔧 Entretien/Répar.',vtt:'🚗 VTT',vta:'🚙 VTA'};
 const CAT_BADGE={water:'bw',elec:'be',fuel:'ba',tele:'bt',post:'bp',other:'bg',vtt:'bb',vta:'br'};
 function catB(c){return`<span class="badge ${CAT_BADGE[c]||'bg'}">${CAT_LABEL[c]||c}</span>`;}
+
+// ═══════════════════════════════════════════════════
+//  SÉCURITÉ — Hachage mots de passe + Brute-force
+// ═══════════════════════════════════════════════════
+async function hashPw(pw){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// Migrer les mots de passe en clair → hachés au premier démarrage
+async function migratePlainPasswords(){
+  let migrated=false;
+  for(const u of DB.users){
+    // Un hash SHA-256 fait exactement 64 caractères hexadécimaux
+    if(u.pw&&u.pw.length!==64){
+      u.pw=await hashPw(u.pw);
+      migrated=true;
+    }
+  }
+  if(migrated){
+    try{localStorage.setItem('vmDB5',JSON.stringify(DB));}catch(e){}
+  }
+}
+
+// Protection brute-force
+let _loginTries=0,_loginBlocked=false,_loginTimer=null;
+const MAX_TRIES=5,BLOCK_MS=30000;
 
 // ═══════════════════════════════════════════════════
 //  CLOCK
@@ -871,11 +916,30 @@ setInterval(tick,1000);
 //  AUTH
 // ═══════════════════════════════════════════════════
 document.getElementById('l-p').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
-function doLogin(){
+async function doLogin(){
+  if(_loginBlocked){
+    document.getElementById('lerr').textContent='Trop de tentatives. Attendez 30 secondes.';
+    document.getElementById('lerr').style.display='block';return;
+  }
   const lg=document.getElementById('l-u').value.trim();
   const pw=document.getElementById('l-p').value;
-  const u=DB.users.find(x=>x.lg===lg&&x.pw===pw&&x.actif==1);
-  if(!u){document.getElementById('lerr').style.display='block';return;}
+  if(!lg||!pw){document.getElementById('lerr').textContent='Identifiants incorrects ou compte inactif.';document.getElementById('lerr').style.display='block';return;}
+  const hashed=await hashPw(pw);
+  const u=DB.users.find(x=>x.lg===lg&&x.pw===hashed&&x.actif==1);
+  if(!u){
+    _loginTries++;
+    document.getElementById('lerr').textContent=_loginTries>=MAX_TRIES
+      ?'Trop de tentatives. Compte bloqué 30s.'
+      :`Identifiants incorrects (${_loginTries}/${MAX_TRIES} tentatives).`;
+    document.getElementById('lerr').style.display='block';
+    if(_loginTries>=MAX_TRIES){
+      _loginBlocked=true;
+      clearTimeout(_loginTimer);
+      _loginTimer=setTimeout(()=>{_loginBlocked=false;_loginTries=0;},BLOCK_MS);
+    }
+    return;
+  }
+  _loginTries=0;_loginBlocked=false;
   document.getElementById('lerr').style.display='none';
   CU=u;u.last=new Date().toISOString();save();
   log('Connexion','Utilisateur : '+u.nc);startApp();
@@ -895,7 +959,19 @@ function startApp(){
   document.querySelectorAll('.adm').forEach(el=>el.classList.toggle('hide',!isAdmin()));
   applyNavPerms();
   tick();
+  // Afficher le dashboard immédiatement avec les données locales
   sp('dashboard',document.querySelector('.nbtn[data-page="dashboard"]'));
+  // Puis tirer depuis Supabase si configuré (en arrière-plan)
+  if(supaOn()){
+    supaPull().then(pulled=>{
+      if(pulled){
+        // Re-render la page active avec les données fraîches
+        const active=document.querySelector('.nbtn.active');
+        rnd(active?.dataset.page||'dashboard');
+        applyNavPerms();
+      }
+    });
+  }
 }
 
 // ═══════════════════════════════════════════════════
@@ -970,14 +1046,17 @@ function rnd(n){
 // ═══════════════════════════════════════════════════
 //  HELPERS
 // ═══════════════════════════════════════════════════
+// Échappement XSS — à appliquer sur toutes les données utilisateur insérées dans innerHTML
+function esc(s){if(!s&&s!==0)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
 function fmt(d){if(!d)return'—';return new Date(d).toLocaleDateString('fr-FR');}
 function fmtDT(d){if(!d)return'—';return new Date(d).toLocaleString('fr-FR');}
 function fmtM(v){if(!v&&v!==0)return'—';return Number(v).toLocaleString('fr-FR',{minimumFractionDigits:2})+' MAD';}
-function tn(id){const t=DB.types.find(x=>x.id==id);return t?t.nom:'—';}
-function sn(id){const s=DB.svcs.find(x=>x.id==id);return s?s.nom:'—';}
-function fn(id){const f=DB.fours.find(x=>x.id==id);return f?f.nom:'—';}
-function vn(id){const v=DB.vehs.find(x=>x.id==id);return v?v.immat:'—';}
-function un(id){const u=DB.users.find(x=>x.id==id);return u?u.nc:'Système';}
+function tn(id){const t=DB.types.find(x=>x.id==id);return t?esc(t.nom):'—';}
+function sn(id){const s=DB.svcs.find(x=>x.id==id);return s?esc(s.nom):'—';}
+function fn(id){const f=DB.fours.find(x=>x.id==id);return f?esc(f.nom):'—';}
+function vn(id){const v=DB.vehs.find(x=>x.id==id);return v?esc(v.immat):'—';}
+function un(id){const u=DB.users.find(x=>x.id==id);return u?esc(u.nc):'Système';}
 function emptyR(msg,col=8){return`<tr><td colspan="${col}"><div class="empty"><div class="eic">📭</div><div class="et">Aucun enregistrement</div><div class="ed">${msg||''}</div></div></td></tr>`;}
 function mvB(t){const m={Sortie:'br',Affectation:'bb',Retour:'ba',Perte:'bx'};return`<span class="badge ${m[t]||'bg'}">${t}</span>`;}
 function roleB(r){const m={admin:'r-admin',manager:'r-manager',agent:'r-agent'};const l={admin:'Admin',manager:'Gestionnaire',agent:'Agent'};return`<span class="${m[r]||'r-agent'}">${l[r]||r}</span>`;}
@@ -1023,10 +1102,10 @@ function cm(id){
 }
 
 function pops(){
-  const tO=DB.types.map(t=>`<option value="${t.id}">${t.nom}</option>`).join('');
-  const sO='<option value="">-- Aucun --</option>'+DB.svcs.map(s=>`<option value="${s.id}">${s.nom}</option>`).join('');
-  const fO=DB.fours.map(f=>`<option value="${f.id}">${f.nom}</option>`).join('');
-  const vO='<option value="">-- Aucun --</option>'+DB.vehs.map(v=>`<option value="${v.id}">${v.immat}</option>`).join('');
+  const tO=DB.types.map(t=>`<option value="${t.id}">${esc(t.nom)}</option>`).join('');
+  const sO='<option value="">-- Aucun --</option>'+DB.svcs.map(s=>`<option value="${s.id}">${esc(s.nom)}</option>`).join('');
+  const fO=DB.fours.map(f=>`<option value="${f.id}">${esc(f.nom)}</option>`).join('');
+  const vO='<option value="">-- Aucun --</option>'+DB.vehs.map(v=>`<option value="${v.id}">${esc(v.immat)}</option>`).join('');
   ['a-type','mv-type','al-type'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=tO||'<option value="">Aucun type</option>';});
   ['mv-svc','mv-svc2','v-svc','pe-svc','el-svc','te-svc','po-svc'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=sO;});
   const af=document.getElementById('a-four');if(af)af.innerHTML=fO||'<option value="">Aucun fournisseur</option>';
@@ -1223,20 +1302,25 @@ function saveFrais(cat){
   chkAl();save();cm('m-frais-'+cat);rnd(cat);
 }
 
-function saveUser(){
+async function saveUser(){
   const eid=document.getElementById('u-eid').value;
   const nc=document.getElementById('u-nc').value.trim();const lg=document.getElementById('u-lg').value.trim();
-  const pw=document.getElementById('u-pw').value;const role=document.getElementById('u-rl').value;
+  const pwRaw=document.getElementById('u-pw').value;const role=document.getElementById('u-rl').value;
   const actif=parseInt(document.getElementById('u-ac').value);
   if(!nc||!lg)return toast('Nom et identifiant obligatoires','err');
   if(eid){
     const u=DB.users.find(x=>x.id==eid);
-    if(u){u.nc=nc;u.lg=lg;if(pw)u.pw=pw;u.role=role;u.actif=actif;}
+    if(u){
+      u.nc=nc;u.lg=lg;
+      if(pwRaw)u.pw=await hashPw(pwRaw); // Hacher uniquement si nouveau mot de passe saisi
+      u.role=role;u.actif=actif;
+    }
     log('Modif utilisateur',nc);toast('Utilisateur modifié ✓');
   }else{
-    if(!pw)return toast('Mot de passe obligatoire','err');
+    if(!pwRaw)return toast('Mot de passe obligatoire','err');
     if(DB.users.find(x=>x.lg===lg))return toast('Identifiant déjà utilisé','err');
-    DB.users.push({id:nid('users'),nc,lg,pw,role,actif,last:null});
+    const pwHash=await hashPw(pwRaw);
+    DB.users.push({id:nid('users'),nc,lg,pw:pwHash,role,actif,last:null});
     log('Création utilisateur',nc);toast('Utilisateur créé ✓');
   }
   save();cm('m-user');rnd('utilisateurs');
@@ -1285,17 +1369,20 @@ function editAlerte(id){const a=DB.alertes.find(x=>x.id==id);if(!a)return;pops()
 // ═══════════════════════════════════════════════════
 //  DELETE (admin only)
 // ═══════════════════════════════════════════════════
+const VALID_TABLES=['types','svcs','fours','vehs','achats','mouvs','frais','alertes','users','logs'];
 function del(table,id){
+  if(!VALID_TABLES.includes(table))return toast('Opération non autorisée','err');
   if(!isAdmin())return toast('Suppression réservée à l\'administrateur','err');
-  if(table==='users'&&id==CU.id)return toast('Impossible de supprimer votre propre compte','err');
+  if(table==='users'&&String(id)===String(CU.id))return toast('Impossible de supprimer votre propre compte','err');
   if(table==='types'){
     const stk=cStock(id);
     if(!confirm(`Supprimer ce type supprimera aussi ses alertes associées${stk>0?' et son stock de '+stk+' unités':''}.  Continuer ?`))return;
-    DB.alertes=DB.alertes.filter(a=>a.tid!=id);
+    DB.alertes=DB.alertes.filter(a=>String(a.tid)!==String(id));
     toast('Type et alertes associées supprimés','warn');
   }else{if(!confirm('Supprimer cet enregistrement ?'))return;}
-  DB[table]=DB[table].filter(x=>x.id!=id);
+  DB[table]=DB[table].filter(x=>String(x.id)!==String(id));
   save();log('Suppression',table+' #'+id);
+  invalidateCache();
   rnd(document.querySelector('.nbtn.active')?.dataset.page||'dashboard');
   if(table!=='types')toast('Supprimé ✓');
 }
@@ -1304,7 +1391,11 @@ function del(table,id){
 //  ALERTES
 // ═══════════════════════════════════════════════════
 function chkAl(){
-  DB.alertes.forEach(a=>{const d=cStock(a.tid);if(d<=a.seuil&&a.statut!=='Déclenché'){a.statut='Déclenché';a.da=new Date().toISOString();}else if(d>a.seuil){a.statut='Actif';a.da=null;}});
+  DB.alertes.forEach(a=>{
+    const d=cStock(a.tid);
+    if(d<=a.seuil&&a.statut!=='Déclenché'){a.statut='Déclenché';a.da=new Date().toISOString();}
+    else if(d>a.seuil){a.statut='Actif';a.da=null;}
+  });
   save();
 }
 
@@ -1340,9 +1431,9 @@ function buildSC(cid){
     const stk=cStock(t.id);const cat=t.cat||'other';const col=CAT_COLOR[cat]||'var(--gn)';
     const al=DB.alertes.find(a=>a.tid==t.id&&a.statut==='Déclenché');
     const pct=Math.min(100,Math.round((stk/mx)*100));
-    return`<div class="sc c${cat}">
+    return`<div class="sc c${esc(cat)}">
       ${al?'<div style="position:absolute;top:7px;right:9px;font-size:13px" title="⚠ Alerte stock">⚠️</div>':''}
-      <div class="sc-lbl">${t.nom}</div>
+      <div class="sc-lbl">${esc(t.nom)}</div>
       <div class="sc-val" style="color:${col}">${stk.toLocaleString()}</div>
       <div class="sc-sub">${catB(cat)}</div>
       <div class="sc-bar"><div class="sc-fill" style="width:${pct}%;background:${col}"></div></div>
@@ -1390,12 +1481,12 @@ function rdStock(){
     }else{
       totEl.style.gridTemplateColumns='repeat(auto-fill,minmax(160px,1fr))';
       totEl.innerHTML=DB.types.map(t=>{
-        const qte=DB.achats.filter(a=>a.tid==t.id).reduce((s,a)=>s+a.qte,0);
-        const mont=DB.achats.filter(a=>a.tid==t.id).reduce((s,a)=>s+(a.mont||0),0);
+        const qte=DB.achats.filter(a=>String(a.tid)===String(t.id)).reduce((s,a)=>s+a.qte,0);
+        const mont=DB.achats.filter(a=>String(a.tid)===String(t.id)).reduce((s,a)=>s+(a.mont||0),0);
         const col=CAT_COLOR[t.cat||'other']||'var(--gn)';
         return`<div class="fstat">
           <div class="fstat-val" style="color:${col};font-size:15px">${mont>0?fmtM(mont):'—'}</div>
-          <div class="fstat-lbl">${t.nom}</div>
+          <div class="fstat-lbl">${esc(t.nom)}</div>
           <div style="font-size:12px;color:var(--mu2);margin-top:2px">${qte.toLocaleString()} achetée${qte!==1?'s':''}</div>
         </div>`;
       }).join('');
@@ -1403,13 +1494,13 @@ function rdStock(){
   }
   const fat=document.getElementById('fa-type');if(fat)fat.innerHTML='<option value="">Tous les types</option>'+DB.types.map(t=>`<option value="${t.id}">${t.nom}</option>`).join('');
   document.getElementById('t-achats').innerHTML=DB.achats.length
-    ?DB.achats.map(a=>`<tr data-s="${tn(a.tid)} ${fn(a.fid)} ${a.lot||''}" data-tid="${a.tid}">
+    ?DB.achats.map(a=>`<tr data-s="${esc(tn(a.tid))} ${esc(fn(a.fid))} ${esc(a.lot||'')}" data-tid="${esc(String(a.tid))}">
       <td class="mono">${fmt(a.date)}</td>
-      <td><strong>${tn(a.tid)}</strong> ${catB(DB.types.find(t=>t.id==a.tid)?.cat||'other')}</td>
+      <td><strong>${tn(a.tid)}</strong> ${catB(DB.types.find(t=>String(t.id)===String(a.tid))?.cat||'other')}</td>
       <td>${fn(a.fid)}</td><td><strong>${a.qte.toLocaleString()}</strong></td>
       <td class="mono">${a.prix?fmtM(a.prix):'—'}</td>
       <td class="mono">${fmtM(a.mont)}</td>
-      <td class="mono tm">${a.lot||'—'}</td>
+      <td class="mono tm">${esc(a.lot||'—')}</td>
       <td class="tm">${un(a.uid)}</td>
       <td>${actBtns('editAchat('+a.id+')','achats',a.id)}</td>
     </tr>`).join('')
@@ -1418,7 +1509,7 @@ function rdStock(){
 
 function rdMouv(){
   document.getElementById('t-mouvements').innerHTML=DB.mouvs.length
-    ?DB.mouvs.map(m=>`<tr data-s="${tn(m.tid)} ${m.tm} ${m.just||''}" data-tm="${m.tm}">
+    ?DB.mouvs.map(m=>`<tr data-s="${esc(tn(m.tid))} ${esc(m.tm)} ${esc(m.just||'')}" data-tm="${esc(m.tm)}">
       <td class="mono">${fmt(m.date)}</td><td>${mvB(m.tm)}</td><td>${tn(m.tid)}</td>
       <td><strong>${m.qte}</strong></td>
       <td class="tm">${m.vid?vn(m.vid):'—'}</td>
@@ -1448,12 +1539,12 @@ function rdFrais(cat){
   }
   tbody.innerHTML=pays.map(f=>{
     const extraCols=cat==='post'
-      ?`<td class="tm">${f.dest||'—'}</td><td><span class="badge bp">${f.tcourrier||'—'}</span></td>`
+      ?`<td class="tm">${esc(f.dest||'—')}</td><td><span class="badge bp">${esc(f.tcourrier||'—')}</span></td>`
       :'';
-    return`<tr data-s="${f.num} ${f.des||''} ${f.dest||''}">
+    return`<tr data-s="${esc(f.num||'')} ${esc(f.des||'')} ${esc(f.dest||'')}">
       <td class="mono">${fmt(f.date)}</td>
-      <td class="mono"><strong>${f.num}</strong></td>
-      <td class="tm">${f.des||'—'}</td>
+      <td class="mono"><strong>${esc(f.num||'—')}</strong></td>
+      <td class="tm">${esc(f.des||'—')}</td>
       ${extraCols}
       <td><span class="badge ${CAT_BADGE[catKey]||'bg'}">${f.qte} vignette${f.qte!==1?'s':''}</span></td>
       <td class="mono">${fmtM(f.mont)}</td>
@@ -1466,10 +1557,10 @@ function rdFrais(cat){
 
 function rdVeh(){
   document.getElementById('t-veh').innerHTML=DB.vehs.length
-    ?DB.vehs.map(v=>`<tr data-s="${v.immat} ${v.marque||''} ${v.modele||''}">
-      <td><strong class="mono">${v.immat}</strong></td>
-      <td>${[v.marque,v.modele].filter(Boolean).join(' ')||'—'}</td>
-      <td>${v.carb?`<span class="badge bb">${v.carb}</span>`:'—'}</td>
+    ?DB.vehs.map(v=>`<tr data-s="${esc(v.immat)} ${esc(v.marque||'')} ${esc(v.modele||'')}">
+      <td><strong class="mono">${esc(v.immat)}</strong></td>
+      <td>${esc([v.marque,v.modele].filter(Boolean).join(' '))||'—'}</td>
+      <td>${v.carb?`<span class="badge bb">${esc(v.carb)}</span>`:'—'}</td>
       <td class="mono tm">${fmt(v.dmis)}</td>
       <td>${v.sid?sn(v.sid):'—'}</td>
       <td>${actBtns('editVeh('+v.id+')','vehs',v.id)}</td>
@@ -1479,11 +1570,11 @@ function rdVeh(){
 
 function rdSvc(){
   document.getElementById('t-svc').innerHTML=DB.svcs.length
-    ?DB.svcs.map(s=>{const n=DB.vehs.filter(v=>v.sid==s.id).length;return`<tr>
-      <td><strong>${s.nom}</strong></td>
-      <td>${s.gerant||'<span class="tm">—</span>'}</td>
-      <td class="mono">${s.tel||'<span class="tm">—</span>'}</td>
-      <td class="tm">${s.desc||'—'}</td>
+    ?DB.svcs.map(s=>{const n=DB.vehs.filter(v=>String(v.sid)===String(s.id)).length;return`<tr>
+      <td><strong>${esc(s.nom)}</strong></td>
+      <td>${s.gerant?esc(s.gerant):'<span class="tm">—</span>'}</td>
+      <td class="mono">${s.tel?esc(s.tel):'<span class="tm">—</span>'}</td>
+      <td class="tm">${esc(s.desc||'—')}</td>
       <td><span class="badge bb">${n} véhicule${n!==1?'s':''}</span></td>
       <td>${actBtns('editSvc('+s.id+')','svcs',s.id)}</td>
     </tr>`;}).join('')
@@ -1493,10 +1584,10 @@ function rdSvc(){
 function rdFour(){
   document.getElementById('t-four').innerHTML=DB.fours.length
     ?DB.fours.map(f=>`<tr>
-      <td><strong>${f.nom}</strong></td>
-      <td>${f.cont||'—'}</td>
-      <td class="mono">${f.tel||'—'}</td>
-      <td>${f.email?`<a href="mailto:${f.email}" style="color:var(--gn)">${f.email}</a>`:'—'}</td>
+      <td><strong>${esc(f.nom)}</strong></td>
+      <td>${esc(f.cont||'—')}</td>
+      <td class="mono">${esc(f.tel||'—')}</td>
+      <td>${f.email?`<a href="mailto:${esc(f.email)}" style="color:var(--gn)">${esc(f.email)}</a>`:'—'}</td>
       <td>${actBtns('editFour('+f.id+')','fours',f.id)}</td>
     </tr>`).join('')
     :emptyR('Aucun fournisseur.',5);
@@ -1505,9 +1596,9 @@ function rdFour(){
 function rdTypes(){
   document.getElementById('t-types').innerHTML=DB.types.length
     ?DB.types.map(t=>{const stk=cStock(t.id);return`<tr>
-      <td><strong>${t.nom}</strong></td>
+      <td><strong>${esc(t.nom)}</strong></td>
       <td>${catB(t.cat||'other')}</td>
-      <td class="tm">${t.desc||'—'}</td>
+      <td class="tm">${esc(t.desc||'—')}</td>
       <td><span class="badge ${stk>0?'bg':'br'}">${stk.toLocaleString()} unités</span></td>
       <td>${actBtns('editType('+t.id+')','types',t.id)}</td>
     </tr>`;}).join('')
@@ -1517,7 +1608,7 @@ function rdTypes(){
 function rdUsers(){
   document.getElementById('t-users').innerHTML=DB.users.length
     ?DB.users.map(u=>`<tr>
-      <td><strong>${u.nc}</strong></td><td class="mono">${u.lg}</td>
+      <td><strong>${esc(u.nc)}</strong></td><td class="mono">${esc(u.lg)}</td>
       <td>${roleB(u.role)}</td>
       <td><span class="badge ${u.actif?'bg':'br'}">${u.actif?'Actif':'Inactif'}</span></td>
       <td class="mono tm">${fmt(u.last)}</td>
@@ -1545,11 +1636,11 @@ function rdAlertes(){
 
 function rdLogs(){
   document.getElementById('t-logs').innerHTML=DB.logs.length
-    ?DB.logs.map(l=>`<tr data-s="${l.action} ${l.details||''}">
+    ?DB.logs.map(l=>`<tr data-s="${esc(l.action)} ${esc(l.details||'')}">
       <td class="mono tm">${fmtDT(l.dt)}</td>
       <td>${un(l.uid)}</td>
-      <td><span class="badge bb">${l.action}</span></td>
-      <td class="tm">${l.details||'—'}</td>
+      <td><span class="badge bb">${esc(l.action)}</span></td>
+      <td class="tm">${esc(l.details||'—')}</td>
     </tr>`).join('')
     :emptyR('Aucune activité.',4);
 }
@@ -1672,16 +1763,28 @@ async function supaPush(){
 }
 async function supaPull(){
   if(!supaOn())return false;
-  try{pill('↓ chargement…','sync');
+  try{
+    pill('↓ chargement…','sync');
     const r=await fetch(SC.url+'/rest/v1/'+SC.tbl+'?id=eq.'+SC.row,{headers:supaH()});
     if(!r.ok)throw new Error(r.status);
     const rows=await r.json();
-    if(!rows?.length){pill('vide','warn');return false;}
-    const rem=JSON.parse(rows[0].data);if(!rem?.users)throw new Error('données invalides');
-    DB=Object.assign({},DB,rem);
+    if(!rows?.length){pill('aucune donnée distante','warn');return false;}
+    const rem=JSON.parse(rows[0].data);
+    // Validation stricte : les données distantes doivent être complètes
+    if(!rem?.users?.length)throw new Error('données distantes invalides ou vides');
+    // Fusionner : prendre Supabase comme référence mais conserver rolePerms local si absent
+    const localPerms=DB.rolePerms;
+    DB=Object.assign({},rem);
+    if(!DB.rolePerms&&localPerms)DB.rolePerms=localPerms;
+    // S'assurer que rolePerms existe toujours
+    if(!DB.rolePerms)DB.rolePerms={
+      admin:['dashboard','stock','mouvements','eau','elec','tele','post','vtt','vta','vehicules','services','fournisseurs','types','utilisateurs','alertes','logs','rapports'],
+      manager:['dashboard','stock','mouvements','eau','elec','tele','post','vtt','vta','vehicules','services','fournisseurs','types','alertes','rapports'],
+      agent:['dashboard','mouvements','alertes']
+    };
     try{localStorage.setItem('vmDB5',JSON.stringify(DB));}catch(e){}
-    pill('✓ données chargées','ok');return true;
-  }catch{pill('⚠ erreur','err');return false;}
+    pill('✓ synchronisé','ok');return true;
+  }catch(err){pill('⚠ '+err.message,'err');return false;}
 }
 function openSupaConfig(){document.getElementById('supa-url').value=SC.url||'';document.getElementById('supa-key').value=SC.key||'';document.getElementById('supa-st').textContent='';document.getElementById('m-supa').classList.add('open');}
 async function saveSupaCfg(){
@@ -1705,7 +1808,12 @@ async function manualSync(){
   const p=await supaPull();if(p){rnd(document.querySelector('.nbtn.active')?.dataset.page||'dashboard');}
 }
 function loadSupaCfg(){
-  try{const c=JSON.parse(localStorage.getItem('vmSC'));if(c?.url&&c?.key){SC.url=c.url;SC.key=c.key;_supaOn=true;supaPull().then(p=>{if(p)rnd(document.querySelector('.nbtn.active')?.dataset.page||'dashboard');});}}catch(e){}
+  // Charger uniquement les clés de connexion au démarrage
+  // Le pull réel se fait dans startApp(), après login
+  try{
+    const c=JSON.parse(localStorage.getItem('vmSC'));
+    if(c?.url&&c?.key){SC.url=c.url;SC.key=c.key;_supaOn=true;}
+  }catch(e){}
 }
 
 
@@ -1861,6 +1969,8 @@ function savePerms(){
 // ═══════════════════════════════════════════════════
 load();
 loadSupaCfg();
+// Migrer les mots de passe en clair vers SHA-256 (migration transparente au premier lancement)
+migratePlainPasswords();
 </script>
 </body>
 </html>

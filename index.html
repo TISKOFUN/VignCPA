@@ -306,7 +306,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px
       <input type="text" placeholder="Rechercher…" oninput="ft('t-mouvements',this.value)">
       <select onchange="ft('t-mouvements','','tm',this.value)"><option value="">Tous</option><option>Sortie</option><option>Affectation</option><option>Retour</option><option>Perte</option></select>
     </div>
-    <table class="dt"><thead><tr><th>Date</th><th>Action</th><th>Vignette</th><th>Qté</th><th>Véhicule</th><th>Service</th><th>Reliquat</th><th>Actions</th></tr></thead>
+    <table class="dt"><thead><tr><th>Date</th><th>Action</th><th>Vignette</th><th>Qté</th><th>Véhicule</th><th>Kilométrage</th><th>Prix unit.</th><th>Reliquat</th><th>Actions</th></tr></thead>
     <tbody id="t-mouvements"></tbody></table>
   </div>
 </div>
@@ -593,8 +593,16 @@ body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px
     <div id="mv-fields-veh" class="fr" style="display:none"><div class="fg"><label class="fl">Véhicule</label><select class="fs" id="mv-veh" onchange="autoSvc()"></select></div><div class="fg"><label class="fl">Service affecté</label><select class="fs" id="mv-svc"></select></div></div>
     <div id="mv-fields-svc" style="display:none"><div class="fg"><label class="fl">Service bénéficiaire</label><select class="fs" id="mv-svc2"></select></div></div>
     <div id="mv-fields-ref" style="display:none"><div class="fg"><label class="fl">Référence / Désignation</label><input class="fi" type="text" id="mv-ref" placeholder="N° compteur, ligne, référence…"></div></div>
-    <div class="fg"><label class="fl">Justificatif</label><input class="fi" type="text" id="mv-just" placeholder="Référence…"></div>
-    <div class="fg"><label class="fl" style="display:flex;justify-content:space-between"><span>Montant utilisé (MAD)</span><span id="mv-hint" style="font-size:10px;color:var(--gn);display:none">● calculé depuis dernier achat</span></label>
+    <!-- Champs spécifiques Carburant / Entretien & Réparation -->
+    <div id="mv-fields-km" style="display:none">
+      <div class="fr">
+        <div class="fg"><label class="fl">Kilométrage (km)</label><input class="fi" type="number" id="mv-km" min="0" placeholder="125000" oninput="calcMouvCarb()"></div>
+        <div class="fg"><label class="fl" id="mv-prix-lbl">Prix unitaire (MAD/L)</label><input class="fi" type="number" id="mv-pu" step="0.001" placeholder="0.000" oninput="calcMouvCarb()"></div>
+      </div>
+      <div id="mv-carb-detail" style="display:none;background:var(--aml);border:1px solid rgba(146,64,14,.2);border-radius:6px;padding:7px 11px;font-size:12px;color:var(--am);margin-top:2px"></div>
+    </div>
+    <div class="fg"><label class="fl">Justificatif / Référence</label><input class="fi" type="text" id="mv-just" placeholder="Bon de carburant, N° facture…"></div>
+    <div class="fg"><label class="fl" style="display:flex;justify-content:space-between"><span>Montant total (MAD)</span><span id="mv-hint" style="font-size:10px;color:var(--gn);display:none">● calculé automatiquement</span></label>
     <input class="fi" type="number" id="mv-mont" step="0.01" placeholder="0.00"></div>
     <div id="mv-detail" style="display:none;background:var(--gnl);border:1px solid rgba(26,92,46,.2);border-radius:6px;padding:7px 11px;font-size:12px;color:var(--gn);margin-top:-6px"></div>
   </div>
@@ -1157,6 +1165,7 @@ function adaptMouvForm(){
   const fVeh=document.getElementById('mv-fields-veh');
   const fSvc=document.getElementById('mv-fields-svc');
   const fRef=document.getElementById('mv-fields-ref');
+  const fKm=document.getElementById('mv-fields-km');
   // Avertissement si catégorie frais généraux
   let warn=document.getElementById('mv-frais-warn');
   if(!warn){warn=document.createElement('div');warn.id='mv-frais-warn';warn.style.cssText='display:none;background:var(--aml);border:1px solid rgba(146,64,14,.25);border-radius:6px;padding:8px 11px;font-size:12px;color:var(--am);margin-bottom:8px';document.getElementById('mv-fields-veh').parentNode.insertBefore(warn,document.getElementById('mv-fields-veh'));}
@@ -1167,12 +1176,22 @@ function adaptMouvForm(){
   }else{warn.style.display='none';}
   if(CAT_USES_VEH.includes(cat)){
     fVeh.style.display='grid';fSvc.style.display='none';fRef.style.display='none';
+    // Carburant → afficher km + prix/L ; Entretien → afficher km + prix unitaire pièce
+    if(cat==='fuel'){
+      fKm.style.display='block';
+      const lbl=document.getElementById('mv-prix-lbl');if(lbl)lbl.textContent='Prix unitaire (MAD/L)';
+      document.getElementById('mv-pu').placeholder='0.000';
+    }else if(cat==='other'){
+      fKm.style.display='block';
+      const lbl=document.getElementById('mv-prix-lbl');if(lbl)lbl.textContent='Prix unitaire (MAD/unité)';
+      document.getElementById('mv-pu').placeholder='0.00';
+    }else{fKm.style.display='none';}
   }else if(CAT_FRAIS.includes(cat)){
-    fVeh.style.display='none';fSvc.style.display='block';fRef.style.display='block';
+    fVeh.style.display='none';fSvc.style.display='block';fRef.style.display='block';fKm.style.display='none';
     const refEl=document.getElementById('mv-ref');
     if(refEl){const ph={water:'N° compteur eau…',elec:'N° compteur électricité…',tele:'N° ligne / abonnement…',post:'N° pli / référence courrier…',vtt:'Référence VTT…',vta:'Référence VTA…'};refEl.placeholder=ph[cat]||'Référence…';}
   }else{
-    fVeh.style.display='none';fSvc.style.display='block';fRef.style.display='none';
+    fVeh.style.display='none';fSvc.style.display='block';fRef.style.display='none';fKm.style.display='none';
   }
 }
 
@@ -1205,6 +1224,22 @@ function autoSvc(){
   if(!vid)return;
   const v=DB.vehs.find(x=>x.id==vid);
   if(v?.sid){const s=document.getElementById('mv-svc');if(s)s.value=v.sid;}
+}
+
+// Calcul auto montant pour carburant / entretien : qté × prix unitaire
+function calcMouvCarb(){
+  const qte=parseFloat(document.getElementById('mv-qte').value)||0;
+  const pu=parseFloat(document.getElementById('mv-pu').value)||0;
+  const detail=document.getElementById('mv-carb-detail');
+  if(qte>0&&pu>0){
+    const mont=(qte*pu).toFixed(2);
+    document.getElementById('mv-mont').value=mont;
+    document.getElementById('mv-hint').style.display='inline';
+    detail.style.display='block';
+    detail.textContent=`${qte.toLocaleString('fr-FR')} × ${pu.toLocaleString('fr-FR',{minimumFractionDigits:3})} MAD = ${Number(mont).toLocaleString('fr-FR',{minimumFractionDigits:2})} MAD`;
+  }else{
+    detail.style.display='none';
+  }
 }
 
 function showStock(cat,infoId,qteVal){
@@ -1280,7 +1315,6 @@ function saveMouv(){
   const isSortie=['Sortie','Affectation','Perte'].includes(tm);
   if(isSortie&&stk<qte)return toast('Stock insuffisant ('+stk+' disponibles)','err');
   const rel=isSortie?stk-qte:stk+qte;
-  // Récupérer véhicule/service/ref selon catégorie
   const type=DB.types.find(t=>t.id==tid);
   const cat=type?type.cat||'other':'other';
   let vid=null,sid=null,ref='';
@@ -1293,9 +1327,12 @@ function saveMouv(){
   }else{
     sid=document.getElementById('mv-svc2').value||null;
   }
-  const obj={date,tm,tid,qte,vid,sid,ref,just:document.getElementById('mv-just').value,mont:parseFloat(document.getElementById('mv-mont').value)||0,rel,uid:CU.id};
+  // Champs spécifiques carburant / entretien
+  const km=(cat==='fuel'||cat==='other')?parseFloat(document.getElementById('mv-km').value)||null:null;
+  const pu=(cat==='fuel'||cat==='other')?parseFloat(document.getElementById('mv-pu').value)||null:null;
+  const obj={date,tm,tid,qte,vid,sid,ref,km,pu,just:document.getElementById('mv-just').value,mont:parseFloat(document.getElementById('mv-mont').value)||0,rel,uid:CU.id};
   if(eid){const m=DB.mouvs.find(x=>x.id==eid);if(m)Object.assign(m,obj);log('Modif mouvement',tn(tid));toast('Mouvement modifié ✓');}
-  else{DB.mouvs.unshift({id:nid('mouvs'),...obj,at:new Date().toISOString()});log('Mouvement '+tm,tn(tid)+' ×'+qte);toast('Mouvement enregistré ✓');}
+  else{DB.mouvs.unshift({id:nid('mouvs'),...obj,at:new Date().toISOString()});log('Mouvement '+tm,tn(tid)+' ×'+qte+(km?' — '+km+' km':''));toast('Mouvement enregistré ✓');}
   chkAl();save();cm('m-mouv');rnd('mouvements');
 }
 
@@ -1373,7 +1410,27 @@ function editSvc(id){const s=DB.svcs.find(x=>x.id==id);if(!s)return;document.get
 function editFour(id){const f=DB.fours.find(x=>x.id==id);if(!f)return;document.getElementById('f-eid').value=f.id;document.getElementById('f-nom').value=f.nom;document.getElementById('f-cont').value=f.cont||'';document.getElementById('f-tel').value=f.tel||'';document.getElementById('f-email').value=f.email||'';document.getElementById('mt-four').textContent='Modifier le fournisseur';om('m-four');}
 function editVeh(id){const v=DB.vehs.find(x=>x.id==id);if(!v)return;pops();document.getElementById('v-eid').value=v.id;document.getElementById('v-immat').value=v.immat;document.getElementById('v-marque').value=v.marque||'';document.getElementById('v-modele').value=v.modele||'';document.getElementById('v-carb').value=v.carb||'';document.getElementById('v-dmis').value=v.dmis||'';document.getElementById('v-svc').value=v.sid||'';document.getElementById('mt-veh').textContent='Modifier le véhicule';document.getElementById('m-veh').classList.add('open');}
 function editAchat(id){const a=DB.achats.find(x=>x.id==id);if(!a)return;pops();document.getElementById('a-eid').value=a.id;document.getElementById('a-date').value=a.date;document.getElementById('a-type').value=a.tid;document.getElementById('a-four').value=a.fid;document.getElementById('a-qte').value=a.qte;document.getElementById('a-prix').value=a.prix||'';document.getElementById('a-mont').value=a.mont||'';document.getElementById('a-lot').value=a.lot||'';document.getElementById('mt-achat').textContent='Modifier l\'achat';document.getElementById('m-achat').classList.add('open');}
-function editMouv(id){const m=DB.mouvs.find(x=>x.id==id);if(!m)return;pops();document.getElementById('mv-eid').value=m.id;document.getElementById('mv-date').value=m.date;document.getElementById('mv-tm').value=m.tm;document.getElementById('mv-type').value=m.tid;document.getElementById('mv-qte').value=m.qte;document.getElementById('mv-veh').value=m.vid||'';document.getElementById('mv-svc').value=m.sid||'';document.getElementById('mv-just').value=m.just||'';document.getElementById('mv-mont').value=m.mont||'';document.getElementById('mt-mouv').textContent='Modifier le mouvement';document.getElementById('m-mouv').classList.add('open');}
+function editMouv(id){
+  const m=DB.mouvs.find(x=>x.id==id);if(!m)return;
+  pops();
+  document.getElementById('mv-eid').value=m.id;
+  document.getElementById('mv-date').value=m.date;
+  document.getElementById('mv-tm').value=m.tm;
+  document.getElementById('mv-type').value=m.tid;
+  document.getElementById('mv-qte').value=m.qte;
+  document.getElementById('mv-veh').value=m.vid||'';
+  document.getElementById('mv-svc').value=m.sid||'';
+  document.getElementById('mv-just').value=m.just||'';
+  document.getElementById('mv-mont').value=m.mont||'';
+  // Champs carburant / entretien
+  const kmEl=document.getElementById('mv-km');const puEl=document.getElementById('mv-pu');
+  if(kmEl)kmEl.value=m.km||'';
+  if(puEl)puEl.value=m.pu||'';
+  document.getElementById('mt-mouv').textContent='Modifier le mouvement';
+  document.getElementById('m-mouv').classList.add('open');
+  // Adapter le formulaire après ouverture
+  setTimeout(adaptMouvForm,50);
+}
 function editFrais(id){
   const f=DB.frais.find(x=>x.id==id);if(!f)return;
   const cat=f.cat;const pfx=FR_PFX[cat];pops();
@@ -1540,15 +1597,23 @@ function rdStock(){
 
 function rdMouv(){
   document.getElementById('t-mouvements').innerHTML=DB.mouvs.length
-    ?DB.mouvs.map(m=>`<tr data-s="${esc(tn(m.tid))} ${esc(m.tm)} ${esc(m.just||'')}" data-tm="${esc(m.tm)}">
-      <td class="mono">${fmt(m.date)}</td><td>${mvB(m.tm)}</td><td>${tn(m.tid)}</td>
-      <td><strong>${m.qte}</strong></td>
-      <td class="tm">${m.vid?vn(m.vid):'—'}</td>
-      <td class="tm">${m.sid?sn(m.sid):'—'}</td>
-      <td class="mono">${m.rel!==undefined?m.rel.toLocaleString():'—'}</td>
-      <td>${actBtns('editMouv('+m.id+')','mouvs',m.id)}</td>
-    </tr>`).join('')
-    :emptyR('Aucun mouvement.',8);
+    ?DB.mouvs.map(m=>{
+      const type=DB.types.find(t=>String(t.id)===String(m.tid));
+      const cat=type?.cat||'other';
+      const showKm=cat==='fuel'||cat==='other';
+      return`<tr data-s="${esc(tn(m.tid))} ${esc(m.tm)} ${esc(m.just||'')}" data-tm="${esc(m.tm)}">
+        <td class="mono">${fmt(m.date)}</td>
+        <td>${mvB(m.tm)}</td>
+        <td>${tn(m.tid)}</td>
+        <td><strong>${m.qte}</strong></td>
+        <td class="tm">${m.vid?vn(m.vid):'—'}</td>
+        <td class="mono tm">${showKm&&m.km?Number(m.km).toLocaleString('fr-FR')+' km':'—'}</td>
+        <td class="mono tm">${showKm&&m.pu?Number(m.pu).toLocaleString('fr-FR',{minimumFractionDigits:2})+' MAD':'—'}</td>
+        <td class="mono">${m.rel!==undefined?m.rel.toLocaleString():'—'}</td>
+        <td>${actBtns('editMouv('+m.id+')','mouvs',m.id)}</td>
+      </tr>`;
+    }).join('')
+    :emptyR('Aucun mouvement.',9);
 }
 
 function rdFrais(cat){
